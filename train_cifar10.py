@@ -30,8 +30,6 @@ from randomaug import RandAugment
 from models.vit import ViT
 from models.convmixer import ConvMixer
 
-# print(f"\nBLASH TEST TEST | CUDA : {torch.cuda.is_available()} \n")
-
 # parsers
 parser = argparse.ArgumentParser(description='PyTorch CIFAR10 Training')
 parser.add_argument('--lr', default=1e-4, type=float, help='learning rate') # resnets.. 1e-3, Vit..1e-4
@@ -250,14 +248,45 @@ elif args.opt == "sgd":
 # use cosine scheduling
 scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, args.n_epochs)
 
+# Calculating ECE
+class _ECELoss(nn.Module):
+
+    def __init__(self, n_bins=10):
+        """
+        n_bins (int): number of confidence interval bins
+        """
+        super(_ECELoss, self).__init__()
+        bin_boundaries = torch.linspace(0, 1, n_bins + 1)
+        self.bin_lowers = bin_boundaries[:-1]
+        self.bin_uppers = bin_boundaries[1:]
+
+    def forward(self, logits, labels):
+        softmaxes = F.softmax(logits, dim=1)
+        confidences, predictions = torch.max(softmaxes, 1)
+        accuracies = predictions.eq(labels)
+        ece = torch.zeros(1, device=logits.device)
+
+        for bin_lower, bin_upper in zip(self.bin_lowers, self.bin_uppers):
+            # Calculated |confidence - accuracy| in each bin
+            in_bin = confidences.gt(bin_lower.item()) * confidences.le(bin_upper.item())
+            prop_in_bin = in_bin.float().mean()
+            if prop_in_bin.item() > 0:
+                accuracy_in_bin = accuracies[in_bin].float().mean()
+                avg_confidence_in_bin = confidences[in_bin].mean()
+                # print('bin_lower=%f, bin_upper=%f, accuracy=%.4f, confidence=%.4f: ' % (bin_lower, bin_upper, accuracy_in_bin.item(),
+                #       avg_confidence_in_bin.item()))
+                ece += torch.abs(avg_confidence_in_bin - accuracy_in_bin) * prop_in_bin
+        print('ece = ', ece)
+        return ece
+
 ##### Training
 scaler = torch.cuda.amp.GradScaler(enabled=use_amp)
 def train(epoch):
-    print('\nEpoch: %d' % epoch)
     net.train()
     train_loss = 0
     correct = 0
     total = 0
+
     for batch_idx, (inputs, targets) in enumerate(trainloader):
         inputs, targets = inputs.to(device), targets.to(device)
         # Train with amp
@@ -274,7 +303,7 @@ def train(epoch):
         total += targets.size(0)
         correct += predicted.eq(targets).sum().item()
 
-        progress_bar(batch_idx, len(trainloader), 'Loss: %.3f | Acc: %.3f%% (%d/%d)'
+        progress_bar(batch_idx, len(trainloader), 'Train Loss: %.3f | Train Acc: %.3f%% (%d/%d)'
             % (train_loss/(batch_idx+1), 100.*correct/total, correct, total))
     return train_loss/(batch_idx+1)
 
@@ -285,19 +314,27 @@ def test(epoch):
     test_loss = 0
     correct = 0
     total = 0
+    num_testdata = len(testloader)
+
+    logits_list = []
+    labels_list = []
+
     with torch.no_grad():
         for batch_idx, (inputs, targets) in enumerate(testloader):
             inputs, targets = inputs.to(device), targets.to(device)
             outputs = net(inputs)
             loss = criterion(outputs, targets)
 
+            logits_list.append(outputs)
+            labels_list.append(targets)
+
             test_loss += loss.item()
             _, predicted = outputs.max(1)
             total += targets.size(0)
             correct += predicted.eq(targets).sum().item()
 
-            progress_bar(batch_idx, len(testloader), 'Loss: %.3f | Acc: %.3f%% (%d/%d)'
-                % (test_loss/(batch_idx+1), 100.*correct/total, correct, total))
+            progress_bar(batch_idx, num_testdata, 'Test Loss: %.3f | Test Acc: %.3f%% (%d/%d)'
+                % (test_loss/num_testdata, 100.*correct/total, correct, total))
     
     # Save checkpoint.
     acc = 100.*correct/total
@@ -305,18 +342,24 @@ def test(epoch):
         print('Saving..')
         state = {"model": net.state_dict(),
               "optimizer": optimizer.state_dict(),
-              "scaler": scaler.state_dict()}
+              "scaler": scaler.state_dict()
+              }
         if not os.path.isdir('checkpoint'):
             os.mkdir('checkpoint')
         torch.save(state, './checkpoint/'+args.net+'-{}-ckpt.t7'.format(args.patch))
         best_acc = acc
     
+    # Calculate ECE
+    logits = torch.cat(logits_list)
+    labels = torch.cat(labels_list)
+    ece = _ECELoss().forward(logits, labels).item()
+    
     os.makedirs("log", exist_ok=True)
-    content = time.ctime() + ' ' + f'Epoch {epoch}, lr: {optimizer.param_groups[0]["lr"]:.7f}, val loss: {test_loss:.5f}, acc: {(acc):.5f}'
+    content = time.ctime() + ' ' + f'Epoch {epoch}, lr: {optimizer.param_groups[0]["lr"]:.7f}, val loss: {(test_loss/num_testdata):.5f}, acc: {(acc):.5f}'
     print(content)
     with open(f'log/log_{args.net}_patch{args.patch}.txt', 'a') as appender:
         appender.write(content + "\n")
-    return test_loss, acc
+    return test_loss/(num_testdata), acc, ece
 
 list_loss = []
 list_acc = []
@@ -325,10 +368,13 @@ if usewandb:
     wandb.watch(net)
     
 net.cuda()
+global_start_time = time.time()
+
 for epoch in range(start_epoch, args.n_epochs):
+    print(f"Epoch: {epoch}/{args.n_epochs}")
     start = time.time()
     trainloss = train(epoch)
-    val_loss, acc = test(epoch)
+    val_loss, acc, ece = test(epoch)
     
     scheduler.step(epoch-1) # step cosine scheduling
     
@@ -337,8 +383,14 @@ for epoch in range(start_epoch, args.n_epochs):
     
     # Log training..
     if usewandb:
-        wandb.log({'epoch': epoch, 'train_loss': trainloss, 'val_loss': val_loss, "val_acc": acc, "lr": optimizer.param_groups[0]["lr"],
-        "epoch_time": time.time()-start})
+        # wandb.log({'epoch': epoch})
+        wandb.log({'Train Loss': trainloss})
+        wandb.log({'Eval Loss': val_loss})
+        wandb.log({'Eval Acc': acc})
+        wandb.log({'Learning Rate': optimizer.param_groups[0]["lr"]})
+        wandb.log({'Testing ECE': ece})
+        wandb.log({"Epoch Runtime": time.time() - start})
+        wandb.log({"Total Runtime": time.time() - global_start_time})
 
     # Write out csv..
     with open(f'log/log_{args.net}_patch{args.patch}.csv', 'w') as f:
