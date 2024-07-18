@@ -1,0 +1,100 @@
+
+Epoch: 0
+/Users/ericnguyen/anaconda3/envs/belkin/lib/python3.12/site-packages/torch/amp/autocast_mode.py:250: UserWarning: User provided device_type of 'cuda', but CUDA is not available. Disabling
+  warnings.warn(
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ [============================ 20/20 ==========================>...]  Step: 2s669ms | Tot: 2m5s | Train Loss: 2.320 | Train Acc: 12.210% (1221/10000)
+
+
+
+
+
+
+
+
+
+
+
+
+ [============================ 100/100 ===========================>]  Step: 227ms | Tot: 23s362ms | Test Loss: 2.141 | Test Acc: 21.530% (2153/10000)
+/Users/ericnguyen/anaconda3/envs/belkin/lib/python3.12/site-packages/torch/optim/lr_scheduler.py:156: UserWarning: The epoch parameter in `scheduler.step()` was not necessary and is being deprecated where possible. Please use `scheduler.step()` to step the scheduler. During the deprecation, if epoch is different from None, the closed form is used instead of the new chainable form, where available. Please open an issue if you are unable to replicate your use case: https://github.com/pytorch/pytorch/issues/new/choose.
+  warnings.warn(EPOCH_DEPRECATION_WARNING, UserWarning)
+Saving..
+ece =  tensor([0.0444])
+Wed Jul 10 18:43:03 2024 Epoch 0, lr: 0.0001000, val loss: 2.14057, acc: 21.53000
+[2.140572290420532]
+Epoch: 1
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ [============================ 20/20 ==========================>...]  Step: 2s707ms | Tot: 2m6s | Train Loss: 2.287 | Train Acc: 13.520% (1352/10000)
+
+
+
+
+
+
+
+
+
+
+
+
+ [============================ 100/100 ===========================>]  Step: 273ms | Tot: 23s879ms | Test Loss: 2.062 | Test Acc: 22.960% (2296/10000)
+Saving..
+ece =  tensor([0.0398])
+Wed Jul 10 18:45:59 2024 Epoch 1, lr: 0.0001000, val loss: 2.06171, acc: 22.96000
+[2.140572290420532, 2.0617091619968413]
+Epoch: 2
+
+
+ [======>..................... 3/20 ...............................]  Step: 7s168ms | Tot: 14s449ms | Train Loss: 0.343 | Train Acc: 12.109% (186/1536)
+Traceback (most recent call last):
+  File "/Users/ericnguyen/Belkin Lab/vision-transformers-cifar10/train_cifar10_cpu.py", line 426, in <module>
+  File "/Users/ericnguyen/Belkin Lab/vision-transformers-cifar10/train_cifar10_cpu.py", line 395, in main
+  File "/Users/ericnguyen/Belkin Lab/vision-transformers-cifar10/train_cifar10_cpu.py", line 306, in train
+    loss.backward()
+  File "/Users/ericnguyen/anaconda3/envs/belkin/lib/python3.12/site-packages/torch/_tensor.py", line 525, in backward
+    torch.autograd.backward(
+  File "/Users/ericnguyen/anaconda3/envs/belkin/lib/python3.12/site-packages/torch/autograd/__init__.py", line 267, in backward
+    _engine_run_backward(
+  File "/Users/ericnguyen/anaconda3/envs/belkin/lib/python3.12/site-packages/torch/autograd/graph.py", line 744, in _engine_run_backward
+    return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/ericnguyen/anaconda3/envs/belkin/lib/python3.12/site-packages/wandb/wandb_torch.py", line 272, in <lambda>
+    handle = var.register_hook(lambda grad: _callback(grad, log_track))
+KeyboardInterrupt

@@ -1,0 +1,57 @@
+==> Preparing data..
+Files already downloaded and verified
+Files already downloaded and verified
+==> Building model..
+Epoch: 0
+/Users/ericnguyen/anaconda3/envs/belkin/lib/python3.12/site-packages/torch/amp/autocast_mode.py:250: UserWarning: User provided device_type of 'cuda', but CUDA is not available. Disabling
+  warnings.warn(
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ [============================ 20/20 ==========================>...]  Step: 3s346ms | Tot: 2m10s | Train Loss: 2.333 | Train Acc: 11.800% (1180/10000)
+
+
+
+
+
+
+
+
+
+
+
+
+
+ [============================ 100/100 ===========================>]  Step: 246ms | Tot: 25s983ms | Test Loss: 2.156 | Test Acc: 21.340% (2134/10000)
+Saving..
+bin_lower=0.100000, bin_upper=0.200000, accuracy=0.1767, confidence=0.1572:
+bin_lower=0.200000, bin_upper=0.300000, accuracy=0.3054, confidence=0.2385:
+bin_lower=0.300000, bin_upper=0.400000, accuracy=0.2687, confidence=0.3357:
+bin_lower=0.400000, bin_upper=0.500000, accuracy=0.2857, confidence=0.4093:
+ece =  tensor([0.0337])
+Wed Jul 10 17:53:28 2024 Epoch 0, lr: 0.0001000, val loss: 215.62358, acc: 21.34000
+/Users/ericnguyen/anaconda3/envs/belkin/lib/python3.12/site-packages/torch/optim/lr_scheduler.py:156: UserWarning: The epoch parameter in `scheduler.step()` was not necessary and is being deprecated where possible. Please use `scheduler.step()` to step the scheduler. During the deprecation, if epoch is different from None, the closed form is used instead of the new chainable form, where available. Please open an issue if you are unable to replicate your use case: https://github.com/pytorch/pytorch/issues/new/choose.
+  warnings.warn(EPOCH_DEPRECATION_WARNING, UserWarning)
+Traceback (most recent call last):
+  File "/Users/ericnguyen/Belkin Lab/vision-transformers-cifar10/train_cifar10_cpu.py", line 423, in <module>
+    main()
+  File "/Users/ericnguyen/Belkin Lab/vision-transformers-cifar10/train_cifar10_cpu.py", line 408, in main
+    wandb.log({"epoch_time": time-time() - start})
+                                  ^^^^^^
+TypeError: 'module' object is not callable. Did you mean: 'time.time(...)'?

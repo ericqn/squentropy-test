@@ -1,0 +1,39 @@
+{
+    "os": "macOS-12.7.4-arm64-arm-64bit",
+    "python": "3.12.4",
+    "heartbeatAt": "2024-07-11T00:56:37.920070",
+    "startedAt": "2024-07-11T00:56:37.630477",
+    "docker": null,
+    "cuda": null,
+    "args": [
+        "--net",
+        "vit_small"
+    ],
+    "state": "running",
+    "program": "<python with no main file>",
+    "codePathLocal": null,
+    "git": {
+        "remote": "https://github.com/kentaroy47/vision-transformers-cifar10.git",
+        "commit": "c54e890c5bafa92774aaedd0db105df1c8391c48"
+    },
+    "email": "ericqn1234@gmail.com",
+    "root": "/Users/ericnguyen/Belkin Lab/vision-transformers-cifar10",
+    "host": "Erics-MacBook-Pro-3.local",
+    "username": "ericnguyen",
+    "executable": "/Users/ericnguyen/anaconda3/envs/belkin/bin/python",
+    "cpu_count": 8,
+    "cpu_count_logical": 8,
+    "disk": {
+        "/": {
+            "total": 460.4317207336426,
+            "used": 232.66990280151367
+        }
+    },
+    "gpuapple": {
+        "type": "arm",
+        "vendor": "Apple"
+    },
+    "memory": {
+        "total": 16.0
+    }
+}

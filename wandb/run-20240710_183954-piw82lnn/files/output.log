@@ -1,0 +1,12 @@
+
+Epoch: 0
+Traceback (most recent call last):
+  File "/Users/ericnguyen/Belkin Lab/vision-transformers-cifar10/train_cifar10_cpu.py", line 411, in <module>
+    main()
+  File "/Users/ericnguyen/Belkin Lab/vision-transformers-cifar10/train_cifar10_cpu.py", line 380, in main
+    trainloss = train(epoch)
+                ^^^^^^^^^^^^
+  File "/Users/ericnguyen/Belkin Lab/vision-transformers-cifar10/train_cifar10_cpu.py", line 281, in train
+    num_traindata = len(trainloader)
+                        ^^^^^^^^^^^
+NameError: name 'trainloader' is not defined

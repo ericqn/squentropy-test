@@ -1,0 +1,15 @@
+==> Preparing data..
+Files already downloaded and verified
+Files already downloaded and verified
+==> Building model..
+Epoch: 0
+Traceback (most recent call last):
+  File "/Users/ericnguyen/Belkin Lab/vision-transformers-cifar10/train_cifar10_cpu.py", line 425, in <module>
+    main()
+  File "/Users/ericnguyen/Belkin Lab/vision-transformers-cifar10/train_cifar10_cpu.py", line 394, in main
+    trainloss = train(epoch)
+                ^^^^^^^^^^^^
+  File "/Users/ericnguyen/Belkin Lab/vision-transformers-cifar10/train_cifar10_cpu.py", line 90, in train
+    net.train()
+    ^^^
+NameError: name 'net' is not defined. Did you mean: 'next'?
