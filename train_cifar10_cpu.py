@@ -51,6 +51,7 @@ parser.add_argument('--n_epochs', type=int, default='200')
 parser.add_argument('--patch', default='4', type=int, help="patch for ViT")
 parser.add_argument('--dimhead', default="512", type=int)
 parser.add_argument('--convkernel', default='8', type=int, help="parameter for convmixer")
+parser.add_argument('--subsize', type=int, default='100')
 
 args = parser.parse_args()
 
@@ -96,7 +97,7 @@ if aug:
 
 
 # Prepare dataset
-subset_size = 100
+subset_size = args.subsize
 
 trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transform_train)
 training_indices = np.random.choice(len(trainset), subset_size, replace=False)
@@ -248,12 +249,19 @@ if args.resume:
 
 def squentropy(outputs, targets):
     num_classes = len(classes)
-    cross_ent = nn.CrossEntropyLoss()
-    targets_final = torch.zeros([targets.size()[0], num_classes], device=device).scatter_(1, targets.reshape(
-                targets.size()[0], 1), 1)
-    second_term = args.resquare * (torch.sum(outputs ** 2) - torch.sum((outputs[targets_final == 1]) ** 2)) / (num_classes - 1) / \
-                   targets_final.size()[0]
-    return cross_ent + second_term
+    print(f'\ntargets.size: {torch.zeros([targets.size()[0], num_classes])}\n')
+    print(device)
+
+    target_final = torch.zeros([targets.size()[0], num_classes], device=device).scatter_(1, targets.reshape(
+        targets.size()[0], 1), 1)
+
+    # ce_func = nn.CrossEntropyLoss().cuda()
+    ce_func = nn.CrossEntropyLoss()
+    print(f'outputs: {outputs[target_final == 1]}')
+    loss = (torch.sum(outputs ** 2) - torch.sum((outputs[target_final == 1]) ** 2)) / (
+                num_classes - 1) / target_final.size()[0] \
+            + ce_func(outputs, targets)
+    return loss
 
 # Loss function is CE
 criterion = nn.CrossEntropyLoss()
@@ -311,7 +319,7 @@ def train(epoch):
         # Train with amp
         with torch.cuda.amp.autocast(enabled=use_amp):
             outputs = net(inputs)
-            loss = criterion(outputs, targets)
+            loss = squentropy(outputs, targets)
         # scaler.scale(loss).backward()
         optimizer.zero_grad()
         loss.backward()
@@ -344,7 +352,7 @@ def test(epoch):
         for batch_idx, (inputs, targets) in enumerate(testloader):
             inputs, targets = inputs.to(device), targets.to(device)
             outputs = net(inputs)
-            loss = criterion(outputs, targets)
+            loss = squentropy(outputs, targets)
 
             logits_list.append(outputs)
             labels_list.append(targets)

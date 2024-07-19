@@ -279,6 +279,23 @@ class _ECELoss(nn.Module):
         print('ece = ', ece)
         return ece
 
+# Squentropy function
+def squentropy(outputs, targets):
+    num_classes = len(classes)
+    print(f'\ntargets.size: {torch.zeros([targets.size()[0], num_classes])}\n')
+    print(device)
+
+    target_final = torch.zeros([targets.size()[0], num_classes], device=device).scatter_(1, targets.reshape(
+        targets.size()[0], 1), 1)
+
+    # ce_func = nn.CrossEntropyLoss().cuda()
+    ce_func = nn.CrossEntropyLoss()
+    print(f'outputs: {outputs[target_final == 1]}')
+    loss = (torch.sum(outputs ** 2) - torch.sum((outputs[target_final == 1]) ** 2)) / (
+                num_classes - 1) / target_final.size()[0] \
+            + ce_func(outputs, targets)
+    return loss
+
 ##### Training
 scaler = torch.cuda.amp.GradScaler(enabled=use_amp)
 def train(epoch):
@@ -292,7 +309,7 @@ def train(epoch):
         # Train with amp
         with torch.cuda.amp.autocast(enabled=use_amp):
             outputs = net(inputs)
-            loss = criterion(outputs, targets)
+            loss = squentropy(outputs, targets)
         scaler.scale(loss).backward()
         scaler.step(optimizer)
         scaler.update()
@@ -323,7 +340,7 @@ def test(epoch):
         for batch_idx, (inputs, targets) in enumerate(testloader):
             inputs, targets = inputs.to(device), targets.to(device)
             outputs = net(inputs)
-            loss = criterion(outputs, targets)
+            loss = squentropy(outputs, targets)
 
             logits_list.append(outputs)
             labels_list.append(targets)
