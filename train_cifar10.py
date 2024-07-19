@@ -51,7 +51,7 @@ parser.add_argument('--convkernel', default='8', type=int, help="parameter for c
 args = parser.parse_args()
 
 # take in args
-usewandb = ~args.nowandb
+usewandb = not (args.nowandb)
 if usewandb:
     import wandb
     watermark = "{}_lr{}".format(args.net, args.lr)
