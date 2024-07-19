@@ -1,0 +1,1 @@
+{"_wandb": {"runtime": 565}, "Train Loss": 2.305311644077301, "_timestamp": 1721349228.510334, "Eval Loss": 2.267455632686615, "Eval Acc": 15.41, "Learning Rate": 9.999383162408304e-05, "Testing ECE": 0.012385336682200432, "Epoch Runtime (s)": 462.89332485198975, "Total Runtime (s)": 462.8935561180115, "_runtime": 465.14035511016846, "_step": 0}

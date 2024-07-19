@@ -55,7 +55,7 @@ usewandb = ~args.nowandb
 if usewandb:
     import wandb
     watermark = "{}_lr{}".format(args.net, args.lr)
-    wandb.init(project="cifar10-challange",
+    wandb.init(project="Squentropy Testing",
             name=watermark)
     wandb.config.update(args)
 
@@ -237,7 +237,7 @@ if args.resume:
     best_acc = checkpoint['acc']
     start_epoch = checkpoint['epoch']
 
-# Loss function is CE
+# TODO: Change into squentropy function
 criterion = nn.CrossEntropyLoss()
 
 if args.opt == "adam":
@@ -381,16 +381,17 @@ for epoch in range(start_epoch, args.n_epochs):
     list_loss.append(val_loss)
     list_acc.append(acc)
     
+    # TODO: Change step into epoch
     # Log training..
     if usewandb:
-        # wandb.log({'epoch': epoch})
-        wandb.log({'Train Loss': trainloss})
-        wandb.log({'Eval Loss': val_loss})
-        wandb.log({'Eval Acc': acc})
-        wandb.log({'Learning Rate': optimizer.param_groups[0]["lr"]})
-        wandb.log({'Testing ECE': ece})
-        wandb.log({"Epoch Runtime": time.time() - start})
-        wandb.log({"Total Runtime": time.time() - global_start_time})
+        wandb.log({'Train Loss': trainloss}, step=epoch)
+        wandb.log({'Eval Loss': val_loss}, step=epoch)
+        wandb.log({'Eval Acc': acc}, step=epoch)
+        wandb.log({'Learning Rate': optimizer.param_groups[0]["lr"]}, step=epoch)
+        wandb.log({'Testing ECE': ece}, step=epoch)
+        wandb.log({"Epoch Runtime (s)": time.time() - start}, step=epoch)
+        wandb.log({"Total Runtime (s)": time.time() - global_start_time}, step=epoch)
+        wandb.log({'Epoch': epoch})
 
     # Write out csv..
     with open(f'log/log_{args.net}_patch{args.patch}.csv', 'w') as f:

@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 '''
 
-Train CIFAR10 with PyTorch and Vision Transformers!
-written by @kentaroy47, @arutema47
+Train CIFAR10 script enabled for CPU! Runs an adjustable smaller subset with CUDA disabled.
 
 '''
 
@@ -97,16 +96,19 @@ if aug:
 
 
 # Prepare dataset
-trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transform_train)
+subset_size = 100
 
-num_samples = 10000
-indices = np.random.choice(len(trainset), num_samples, replace=False)
-training_subset = Subset(trainset, indices)
+trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transform_train)
+training_indices = np.random.choice(len(trainset), subset_size, replace=False)
+training_subset = Subset(trainset, training_indices)
 
 trainloader = torch.utils.data.DataLoader(training_subset, batch_size=bs, shuffle=True, num_workers=1)
 
 testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=transform_test)
-testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=False, num_workers=1)
+testing_indices = np.random.choice(len(testset), subset_size, replace=False)
+testing_subset = Subset(testset, testing_indices)
+
+testloader = torch.utils.data.DataLoader(testing_subset, batch_size=100, shuffle=False, num_workers=1)
 
 classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
 
@@ -243,6 +245,15 @@ if args.resume:
     net.load_state_dict(checkpoint['net'])
     best_acc = checkpoint['acc']
     start_epoch = checkpoint['epoch']
+
+def squentropy(outputs, targets):
+    num_classes = len(classes)
+    cross_ent = nn.CrossEntropyLoss()
+    targets_final = torch.zeros([targets.size()[0], num_classes], device=device).scatter_(1, targets.reshape(
+                targets.size()[0], 1), 1)
+    second_term = args.resquare * (torch.sum(outputs ** 2) - torch.sum((outputs[targets_final == 1]) ** 2)) / (num_classes - 1) / \
+                   targets_final.size()[0]
+    return cross_ent + second_term
 
 # Loss function is CE
 criterion = nn.CrossEntropyLoss()
@@ -385,6 +396,7 @@ def main():
     if usewandb:
         wandb.watch(net)
         
+    global_start_time = time.time()
     # uncomment this after gpu access
     # net.cuda()
     for epoch in range(start_epoch, args.n_epochs):
@@ -400,13 +412,14 @@ def main():
         
         # Log training..
         if usewandb:
-            # wandb.log({'epoch': epoch})
-            wandb.log({'train_loss': trainloss})
-            wandb.log({'val_loss': val_loss})
-            wandb.log({'val_acc': acc})
-            wandb.log({'lr': optimizer.param_groups[0]["lr"]})
-            wandb.log({'test_ece': ece})
-            wandb.log({"epoch_time": time.time() - start})
+            wandb.log({'Train Loss': trainloss}, step=epoch)
+            wandb.log({'Eval Loss': val_loss}, step=epoch)
+            wandb.log({'Eval Acc': acc}, step=epoch)
+            wandb.log({'Learning Rate': optimizer.param_groups[0]["lr"]}, step=epoch)
+            wandb.log({'Testing ECE': ece}, step=epoch)
+            wandb.log({"Epoch Runtime (s)": time.time() - start}, step=epoch)
+            wandb.log({"Total Runtime (s)": time.time() - global_start_time}, step=epoch)
+            wandb.log({'Epoch': epoch})
 
         # Write out csv..
         with open(f'log/log_{args.net}_patch{args.patch}.csv', 'w') as f:
