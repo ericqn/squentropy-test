@@ -70,3 +70,7 @@ Wed Oct 28 04:14:08 2020 Epoch 19, lr: 0.0001000, val loss: 74.17493, acc: 74.16
 Wed Oct 28 04:15:17 2020 Epoch 20, lr: 0.0001000, val loss: 73.21486, acc: 74.63000
 Wed Oct 28 04:16:25 2020 Epoch 21, lr: 0.0001000, val loss: 73.42624, acc: 74.36000
 Wed Oct 28 04:17:34 2020 Epoch 22, lr: 0.0001000, val loss: 73.11926, acc: 74.80000
+Fri Jul 19 17:38:29 2024 Epoch 0, lr: 0.0001000, val loss: 0.14892, acc: 12.00000
+Fri Jul 19 17:38:48 2024 Epoch 1, lr: 0.0001000, val loss: 0.17742, acc: 12.00000
+Fri Jul 19 17:39:06 2024 Epoch 2, lr: 0.0001000, val loss: 0.16234, acc: 10.00000
+Fri Jul 19 17:39:24 2024 Epoch 3, lr: 0.0001000, val loss: 0.12295, acc: 13.00000

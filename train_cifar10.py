@@ -47,6 +47,7 @@ parser.add_argument('--n_epochs', type=int, default='200')
 parser.add_argument('--patch', default='4', type=int, help="patch for ViT")
 parser.add_argument('--dimhead', default="512", type=int)
 parser.add_argument('--convkernel', default='8', type=int, help="parameter for convmixer")
+parser.add_argument('--loss_eq', default='sqen')
 
 args = parser.parse_args()
 
@@ -293,6 +294,16 @@ def squentropy(outputs, targets):
             + ce_func(outputs, targets)
     return loss
 
+# mse function
+def mean_square(outputs, targets):
+    num_classes = len(classes)
+
+    target_final = torch.zeros([targets.size()[0], num_classes], device=device).scatter_(1, targets.reshape(
+        targets.size()[0], 1), 1)
+    
+    loss = torch.mean((outputs - target_final.type(torch.float)) ** 2)
+    return loss
+
 ##### Training
 scaler = torch.cuda.amp.GradScaler(enabled=use_amp)
 def train(epoch):
@@ -306,7 +317,15 @@ def train(epoch):
         # Train with amp
         with torch.cuda.amp.autocast(enabled=use_amp):
             outputs = net(inputs)
-            loss = squentropy(outputs, targets)
+            if (args.loss_eq == 'sqen'):
+                loss = squentropy(outputs, targets)
+            elif (args.loss_eq == 'cross'):
+                loss = criterion(outputs, targets)
+            elif (args.loss_eq == 'mse'):
+                loss = mean_square(outputs, targets)
+            else:
+                raise Exception(f'\nInvalid loss function input: {args.loss_eq} \
+                                \nPlease input \'sqen\', \'cross\', or \'mse\' as inputs to the loss_eq parameter\n')
         scaler.scale(loss).backward()
         scaler.step(optimizer)
         scaler.update()
@@ -337,7 +356,17 @@ def test(epoch):
         for batch_idx, (inputs, targets) in enumerate(testloader):
             inputs, targets = inputs.to(device), targets.to(device)
             outputs = net(inputs)
-            loss = squentropy(outputs, targets)
+
+            # determining loss function
+            if (args.loss_eq == 'sqen'):
+                loss = squentropy(outputs, targets)
+            elif (args.loss_eq == 'cross'):
+                loss = criterion(outputs, targets)
+            elif (args.loss_eq == 'mse'):
+                loss = mean_square(outputs, targets)
+            else:
+                raise Exception(f'\nInvalid loss function input: {args.loss_eq} \
+                                \nPlease input \'sqen\', \'cross\', or \'mse\' as inputs to the loss_eq parameter\n')
 
             logits_list.append(outputs)
             labels_list.append(targets)
