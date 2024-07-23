@@ -109,7 +109,6 @@ classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship'
 print('==> Building model..')
 # net = VGG('VGG19')
 if args.net=='res18':
-    net = models.resnet18
     net = ResNet18()
 elif args.net=='vgg':
     net = VGG('VGG19')
