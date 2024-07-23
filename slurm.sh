@@ -21,4 +21,4 @@ conda activate flk_6
 # Ensure the conda environment is activated properly
 echo “Activated conda environment: $(conda info --envs | grep ‘*’ | awk ‘{print $1}’)”
 # Run the training script
-python path/train_cifar10.py --net res18 --n_epochs 200 --n_layers 6 --n_heads 8 --bs 64 --dimhead 64
+python path/train_cifar10.py --net res18 --n_epochs 200 --loss_eq mse --lr 2e-2
