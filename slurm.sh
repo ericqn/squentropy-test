@@ -3,7 +3,7 @@
 #SBATCH -o /path/tabular.%j.log   # define stdout filename; %j expands to jobid; to redirect stderr elsewhere, duplicate this line with -e instead
 #SBATCH --mail-user=YOUREMAIL
 #SBATCH --mail-type=FAIL,TIME_LIMIT # get notified via email on job failure or time limit reached
-#SBATCH --partition=gpuA40x4         # specify queue, if this doesn’t submit try gpu-shared
+#SBATCH --partition=gpuA40x4-interactive        # specify queue, if this doesn’t submit try gpu-shared
 #SBATCH --gpus=1
 #SBATCH --cpus-per-task=8
 #SBATCH --account=bbjr-delta-gpu
