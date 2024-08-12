@@ -453,7 +453,7 @@ for epoch in range(start_epoch, args.n_epochs):
         wandb.log({'Best Eval Acc': best_acc})
         wandb.log({'Max ECE': max_ece})
         wandb.log({'Min ECE': min_ece})
-        wandb.log({'Avg ECE': sum_ece / epoch})
+        wandb.log({'Avg ECE': sum_ece / epoch + 1})
 
     # Write out csv..
     with open(f'log/log_{args.net}_patch{args.patch}.csv', 'w') as f:
