@@ -68,6 +68,9 @@ aug = args.noaug
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 best_acc = 0  # best test accuracy
+max_ece = 0
+min_ece = 100
+sum_ece = 0
 start_epoch = 0  # start from epoch 0 or last checkpoint epoch
 
 # Data
@@ -343,6 +346,9 @@ def train(epoch):
 ##### Validation
 def test(epoch):
     global best_acc
+    global min_ece
+    global max_ece
+    global sum_ece
     net.eval()
     test_loss = 0
     correct = 0
@@ -396,6 +402,13 @@ def test(epoch):
     logits = torch.cat(logits_list)
     labels = torch.cat(labels_list)
     ece = _ECELoss().forward(logits, labels).item()
+    sum_ece = sum_ece + ece
+
+    if ece > max_ece:
+        max_ece = ece
+
+    if ece < min_ece:
+        min_ece = ece
     
     os.makedirs("log", exist_ok=True)
     content = time.ctime() + ' ' + f'Epoch {epoch}, lr: {optimizer.param_groups[0]["lr"]:.7f}, val loss: {(test_loss/num_testdata):.5f}, acc: {(acc):.5f}'
@@ -435,6 +448,12 @@ for epoch in range(start_epoch, args.n_epochs):
         wandb.log({"Epoch Runtime (s)": time.time() - start}, step=epoch)
         wandb.log({"Total Runtime (s)": time.time() - global_start_time}, step=epoch)
         wandb.log({'Epoch': epoch})
+
+        # log max, min, avg for ECE and test loss
+        wandb.log({'Best Eval Acc': best_acc})
+        wandb.log({'Max ECE': max_ece})
+        wandb.log({'Min ECE': min_ece})
+        wandb.log({'Avg ECE': sum_ece / epoch})
 
     # Write out csv..
     with open(f'log/log_{args.net}_patch{args.patch}.csv', 'w') as f:
