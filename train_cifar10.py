@@ -450,7 +450,7 @@ for epoch in range(start_epoch, args.n_epochs):
         wandb.log({'Best Eval Acc': eval_acc_max}, step=epoch)
         wandb.log({'Max ECE': ece_max}, step=epoch)
         wandb.log({'Min ECE': ece_min}, step=epoch)
-        wandb.log({'Min ECE': ece_avg}, step=epoch)
+        wandb.log({'Avg ECE': ece_avg}, step=epoch)
         wandb.log({'Train Loss': trainloss}, step=epoch)
         wandb.log({'Eval Loss': val_loss}, step=epoch)
         wandb.log({'Eval Acc': acc}, step=epoch)
