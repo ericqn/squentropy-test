@@ -431,7 +431,7 @@ for epoch in range(start_epoch, args.n_epochs):
     start = time.time()
     trainloss = train(epoch)
     val_loss, acc, ece = test(epoch)
-    avg_ece = sum_ece / (epoch + 1)
+    # avg_ece = sum_ece / (epoch + 1)
     
     scheduler.step(epoch-1) # step cosine scheduling
     
@@ -441,6 +441,9 @@ for epoch in range(start_epoch, args.n_epochs):
     # TODO: Change step into epoch
     # Log training..
     if usewandb:
+        wandb.log({'Best Eval Acc': best_acc})
+        wandb.log({'Max ECE': max_ece})
+        wandb.log({'Min ECE': min_ece})
         wandb.log({'Train Loss': trainloss}, step=epoch)
         wandb.log({'Eval Loss': val_loss}, step=epoch)
         wandb.log({'Eval Acc': acc}, step=epoch)
@@ -448,10 +451,7 @@ for epoch in range(start_epoch, args.n_epochs):
         wandb.log({'Testing ECE': ece}, step=epoch)
         wandb.log({"Epoch Runtime (s)": time.time() - start}, step=epoch)
         wandb.log({"Total Runtime (s)": time.time() - global_start_time}, step=epoch)
-        wandb.log({'Best Eval Acc': best_acc})
-        wandb.log({'Max ECE': max_ece})
-        wandb.log({'Min ECE': min_ece})
-        wandb.log({'Avg ECE': avg_ece})
+        # wandb.log({'Avg ECE': avg_ece})
         wandb.log({'Epoch': epoch})
 
         # log max, min, avg for ECE and test loss
