@@ -441,9 +441,9 @@ for epoch in range(start_epoch, args.n_epochs):
     # TODO: Change step into epoch
     # Log training..
     if usewandb:
-        wandb.log({'Best Eval Acc': best_acc})
-        wandb.log({'Max ECE': max_ece})
-        wandb.log({'Min ECE': min_ece})
+        # wandb.log({'Best Eval Acc': best_acc}, step=epoch)
+        # wandb.log({'Max ECE': max_ece}, step=epoch)
+        # wandb.log({'Min ECE': min_ece}, step=epoch)
         wandb.log({'Train Loss': trainloss}, step=epoch)
         wandb.log({'Eval Loss': val_loss}, step=epoch)
         wandb.log({'Eval Acc': acc}, step=epoch)
