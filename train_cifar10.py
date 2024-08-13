@@ -68,9 +68,6 @@ aug = args.noaug
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 best_acc = 0  # best test accuracy
-max_ece = 0
-min_ece = 100
-sum_ece = 0
 start_epoch = 0  # start from epoch 0 or last checkpoint epoch
 
 # Data
@@ -402,13 +399,6 @@ def test(epoch):
     logits = torch.cat(logits_list)
     labels = torch.cat(labels_list)
     ece = _ECELoss().forward(logits, labels).item()
-    sum_ece = sum_ece + ece
-
-    if ece > max_ece:
-        max_ece = ece
-
-    if ece < min_ece:
-        min_ece = ece
     
     os.makedirs("log", exist_ok=True)
     content = time.ctime() + ' ' + f'Epoch {epoch}, lr: {optimizer.param_groups[0]["lr"]:.7f}, val loss: {(test_loss/num_testdata):.5f}, acc: {(acc):.5f}'
@@ -426,12 +416,28 @@ if usewandb:
 net.cuda()
 global_start_time = time.time()
 
+# tracking ECE min, max, avg
+ece_sum = 0
+ece_max = 0
+ece_min = 100
+eval_acc_max = 0
+
 for epoch in range(start_epoch, args.n_epochs):
     print(f"Epoch: {epoch}/{args.n_epochs}")
     start = time.time()
     trainloss = train(epoch)
     val_loss, acc, ece = test(epoch)
-    # avg_ece = sum_ece / (epoch + 1)
+
+    ece_sum += ece
+    ece_avg = ece_sum / (epoch + 1)
+    if ece > ece_max:
+        ece_max = ece
+
+    if ece < ece_min:
+        ece_min = ece
+
+    if acc > eval_acc_max:
+        eval_acc_max = acc
     
     scheduler.step(epoch-1) # step cosine scheduling
     
@@ -441,9 +447,10 @@ for epoch in range(start_epoch, args.n_epochs):
     # TODO: Change step into epoch
     # Log training..
     if usewandb:
-        # wandb.log({'Best Eval Acc': best_acc}, step=epoch)
-        # wandb.log({'Max ECE': max_ece}, step=epoch)
-        # wandb.log({'Min ECE': min_ece}, step=epoch)
+        wandb.log({'Best Eval Acc': eval_acc_max}, step=epoch)
+        wandb.log({'Max ECE': ece_max}, step=epoch)
+        wandb.log({'Min ECE': ece_min}, step=epoch)
+        wandb.log({'Min ECE': ece_avg}, step=epoch)
         wandb.log({'Train Loss': trainloss}, step=epoch)
         wandb.log({'Eval Loss': val_loss}, step=epoch)
         wandb.log({'Eval Acc': acc}, step=epoch)
@@ -451,7 +458,6 @@ for epoch in range(start_epoch, args.n_epochs):
         wandb.log({'Testing ECE': ece}, step=epoch)
         wandb.log({"Epoch Runtime (s)": time.time() - start}, step=epoch)
         wandb.log({"Total Runtime (s)": time.time() - global_start_time}, step=epoch)
-        # wandb.log({'Avg ECE': avg_ece})
         wandb.log({'Epoch': epoch})
 
         # log max, min, avg for ECE and test loss
