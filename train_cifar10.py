@@ -398,6 +398,8 @@ def test(epoch):
     # Calculate ECE
     logits = torch.cat(logits_list)
     labels = torch.cat(labels_list)
+    import ipdb
+    ipdb.set_trace()
     ece = _ECELoss().forward(logits, labels).item()
     
     os.makedirs("log", exist_ok=True)
