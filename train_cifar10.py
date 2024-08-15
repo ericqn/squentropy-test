@@ -29,6 +29,7 @@ from utils import progress_bar
 from randomaug import RandAugment
 from models.vit import ViT
 from models.convmixer import ConvMixer
+import ipdb
 
 # parsers
 parser = argparse.ArgumentParser(description='PyTorch CIFAR10 Training')
@@ -267,6 +268,7 @@ class _ECELoss(nn.Module):
         accuracies = predictions.eq(labels)
         ece = torch.zeros(1, device=logits.device)
 
+        
         for bin_lower, bin_upper in zip(self.bin_lowers, self.bin_uppers):
             # Calculated |confidence - accuracy| in each bin
             in_bin = confidences.gt(bin_lower.item()) * confidences.le(bin_upper.item())
@@ -277,6 +279,7 @@ class _ECELoss(nn.Module):
                 # print('bin_lower=%f, bin_upper=%f, accuracy=%.4f, confidence=%.4f: ' % (bin_lower, bin_upper, accuracy_in_bin.item(),
                 #       avg_confidence_in_bin.item()))
                 ece += torch.abs(avg_confidence_in_bin - accuracy_in_bin) * prop_in_bin
+        ipdb.set_trace()
         print('ece = ', ece)
         return ece
 
