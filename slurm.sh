@@ -1,6 +1,6 @@
 #!/bin/bash
-#SBATCH -J Tabular        # Job name
-#SBATCH -o /path/tabular.%j.log   # define stdout filename; %j expands to jobid; to redirect stderr elsewhere, duplicate this line with -e instead
+#SBATCH -J cifar_10        # Job name
+#SBATCH -o /cifar_log.%j.log   # define stdout filename; %j expands to jobid; to redirect stderr elsewhere, duplicate this line with -e instead
 #SBATCH --mail-user=ern002@ucsd.edu
 #SBATCH --mail-type=FAIL,TIME_LIMIT # get notified via email on job failure or time limit reached
 #SBATCH --partition=gpuA40x4-interactive        # specify queue, if this doesn’t submit try gpu-shared
