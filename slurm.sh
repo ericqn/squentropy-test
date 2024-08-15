@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH -J cifar_10        # Job name
-#SBATCH -o /cifar_log.%j.log   # define stdout filename; %j expands to jobid; to redirect stderr elsewhere, duplicate this line with -e instead
+#SBATCH -o /u/enguyen3/squentropy-test/cifar_10_log/cifar_log.%j.log   # define stdout filename; %j expands to jobid; to redirect stderr elsewhere, duplicate this line with -e instead
 #SBATCH --mail-user=ern002@ucsd.edu
 #SBATCH --mail-type=FAIL,TIME_LIMIT # get notified via email on job failure or time limit reached
 #SBATCH --partition=gpuA40x4-interactive        # specify queue, if this doesn’t submit try gpu-shared
@@ -17,8 +17,8 @@ module --ignore_cache load “anaconda3”
 # Initialize conda
 eval “$(conda shell.bash hook)”
 # Activate the desired conda environment
-conda activate flk_6
+conda activate belkin
 # Ensure the conda environment is activated properly
 echo “Activated conda environment: $(conda info --envs | grep ‘*’ | awk ‘{print $1}’)”
 # Run the training script
-python path/train_cifar10.py --net res18 --n_epochs 200 --loss_eq mse --lr 2e-2
+python /u/enguyen3/squentropy-test/train_cifar10.py --net res18 --n_epochs 200 --loss_eq mse --lr 2e-2
