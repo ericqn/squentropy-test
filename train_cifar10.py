@@ -279,7 +279,6 @@ class _ECELoss(nn.Module):
                 # print('bin_lower=%f, bin_upper=%f, accuracy=%.4f, confidence=%.4f: ' % (bin_lower, bin_upper, accuracy_in_bin.item(),
                 #       avg_confidence_in_bin.item()))
                 ece += torch.abs(avg_confidence_in_bin - accuracy_in_bin) * prop_in_bin
-        ipdb.set_trace()
         print('ece = ', ece)
         return ece
 
@@ -401,8 +400,6 @@ def test(epoch):
     # Calculate ECE
     logits = torch.cat(logits_list)
     labels = torch.cat(labels_list)
-    import ipdb
-    ipdb.set_trace()
     ece = _ECELoss().forward(logits, labels).item()
     
     os.makedirs("log", exist_ok=True)
