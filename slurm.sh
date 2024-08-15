@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH -J cifar_10        # Job name
-#SBATCH -o /u/enguyen3/squentropy-test/cifar_10_log/cifar_log.%j.log   # define stdout filename; %j expands to jobid; to redirect stderr elsewhere, duplicate this line with -e instead
+#SBATCH -o /u/enguyen3/squentropy-test/cifar_10_log.%j.log   # define stdout filename; %j expands to jobid; to redirect stderr elsewhere, duplicate this line with -e instead
 #SBATCH --mail-user=ern002@ucsd.edu
 #SBATCH --mail-type=FAIL,TIME_LIMIT # get notified via email on job failure or time limit reached
 #SBATCH --partition=gpuA40x4-interactive        # specify queue, if this doesn’t submit try gpu-shared
@@ -13,7 +13,7 @@
 #SBATCH --time=4:00:00       # set maximum run time in H:m:S
 #SBATCH --no-requeue     # don’t automatically requeue job if node fails, usually errors need to be inspected and debugged
 # Load Anaconda module
-module --ignore_cache load “anaconda3”
+module --ignore_cache load anaconda3_Rcpu/22.9.0
 # Initialize conda
 eval “$(conda shell.bash hook)”
 # Activate the desired conda environment
