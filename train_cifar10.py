@@ -49,6 +49,7 @@ parser.add_argument('--patch', default='4', type=int, help="patch for ViT")
 parser.add_argument('--dimhead', default="512", type=int)
 parser.add_argument('--convkernel', default='8', type=int, help="parameter for convmixer")
 parser.add_argument('--loss_eq', default='sqen')
+parser.add_argument('--dataset', default='cifar10')
 
 args = parser.parse_args()
 
@@ -56,7 +57,7 @@ args = parser.parse_args()
 usewandb = not (args.nowandb)
 if usewandb:
     import wandb
-    watermark = "{}_lr{}_loss:{}".format(args.net, args.lr, args.loss_eq)
+    watermark = "{}_model:{}_lr{}_loss:{}".format(args.dataset, args.net, args.lr, args.loss_eq)
     wandb.init(project="Squentropy Testing",
             name=watermark)
     wandb.config.update(args)
@@ -97,13 +98,19 @@ if aug:
     N = 2; M = 14;
     transform_train.transforms.insert(0, RandAugment(N, M))
 
-# Prepare dataset
-# trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transform_train)
-trainset = torchvision.datasets.SVHN(root='./data', split='train', download=True, transform=transform_train)
-trainloader = torch.utils.data.DataLoader(trainset, batch_size=bs, shuffle=True, num_workers=8)
+# Prepare dataset based on arg
 
-# testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=transform_test)
-testset = torchvision.datasets.SVHN(root='./data', split='test', download=True, transform=transform_test)
+if args.dataset == "cifar_10":
+    trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transform_train)
+    testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=transform_test)
+elif args.dataset == "svhn":
+    trainset = torchvision.datasets.SVHN(root='./data', split='train', download=True, transform=transform_train)
+    testset = torchvision.datasets.SVHN(root='./data', split='test', download=True, transform=transform_test)
+else:
+    raise Exception(f'\nInvalid dataset function input: {args.dataset} \
+                                \nPlease input a valid dataset as input to the dataset parameter\n')
+
+trainloader = torch.utils.data.DataLoader(trainset, batch_size=bs, shuffle=True, num_workers=8)
 testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=False, num_workers=8)
 
 classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
