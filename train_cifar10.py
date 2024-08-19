@@ -129,8 +129,8 @@ print('==> Building model..')
 if args.net=='res18':
     net = ResNet18()
 elif args.net=='vgg':
-    # net = torchvision.models.vgg11_bn(weights=None, num_classes=args.num_classes)
-    net = VGG('VGG11')
+    net = torchvision.models.vgg11_bn(weights=None, num_classes=args.num_classes)
+    # net = VGG('VGG11')
     # net = VGG('VGG19')
 elif args.net=='res34':
     net = ResNet34()
