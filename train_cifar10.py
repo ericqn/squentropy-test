@@ -51,6 +51,11 @@ parser.add_argument('--convkernel', default='8', type=int, help="parameter for c
 parser.add_argument('--loss_eq', default='sqen')
 parser.add_argument('--dataset', default='cifar10')
 
+# Rescaling Variables
+sqLoss_t = 1
+sqLoss_M = 1
+sqen_alpha = 1
+
 args = parser.parse_args()
 
 # take in args
@@ -103,6 +108,10 @@ if aug:
 if args.dataset == "cifar_10":
     trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transform_train)
     testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=transform_test)
+
+    # Change rescale variables as needed
+    sqLoss_t = 1
+    sqLoss_M = 10
 elif args.dataset == "svhn":
     trainset = torchvision.datasets.SVHN(root='./data', split='train', download=True, transform=transform_train)
     testset = torchvision.datasets.SVHN(root='./data', split='test', download=True, transform=transform_test)
@@ -117,11 +126,12 @@ classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship'
 
 # Model factory..
 print('==> Building model..')
-# net = VGG('VGG19')
 if args.net=='res18':
     net = ResNet18()
 elif args.net=='vgg':
-    net = VGG('VGG19')
+    # net = torchvision.models.vgg11_bn(weights=None, num_classes=args.num_classes)
+    net = VGG('VGG11')
+    # net = VGG('VGG19')
 elif args.net=='res34':
     net = ResNet34()
 elif args.net=='res50':
@@ -296,6 +306,7 @@ class _ECELoss(nn.Module):
 def squentropy(outputs, targets):
     num_classes = len(classes)
 
+    # one-hot encoding of target
     target_final = torch.zeros([targets.size()[0], num_classes], device=device).scatter_(1, targets.reshape(
         targets.size()[0], 1), 1)
 
@@ -310,10 +321,12 @@ def squentropy(outputs, targets):
 def mean_square(outputs, targets):
     num_classes = len(classes)
 
+    # one-hot encoding of target
     target_final = torch.zeros([targets.size()[0], num_classes], device=device).scatter_(1, targets.reshape(
         targets.size()[0], 1), 1)
+    mse_weights = target_final * sqLoss_t + 1
     
-    loss = torch.mean((outputs - target_final.type(torch.float)) ** 2)
+    loss = torch.mean((outputs - sqLoss_M * target_final.type(torch.float)) ** 2 * mse_weights)
     return loss
 
 ##### Training
