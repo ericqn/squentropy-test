@@ -84,5 +84,5 @@ class WideResNet(nn.Module):
         out = out.view(-1, self.nChannels)
         return self.fc(out)
     
-def WideResNet():
+def WideRes():
     return WideResNet()

@@ -46,6 +46,7 @@ parser.add_argument('--dp', action='store_true', help='use data parallel')
 parser.add_argument('--bs', default='512')
 parser.add_argument('--size', default="32")
 parser.add_argument('--n_epochs', type=int, default='200')
+parser.add_argument('--n_classes', type=int, default='10')
 parser.add_argument('--patch', default='4', type=int, help="patch for ViT")
 parser.add_argument('--dimhead', default="512", type=int)
 parser.add_argument('--convkernel', default='8', type=int, help="parameter for convmixer")
@@ -144,10 +145,11 @@ print('==> Building model..')
 if args.net=='res18':
     net = ResNet18()
 elif args.net=='wide_res':
-    net = WideResNet(num_classes=100)
+    from models.wide_resnet import WideResNet
+    net = WideResNet(num_classes=args.n_classes)
 elif args.net=='vgg':
     # net used in squentropy paper
-    net = torchvision.models.vgg11_bn(weights=None, num_classes=10)
+    net = torchvision.models.vgg11_bn(weights=None, num_classes=args.n_classes)
     # net = VGG('VGG19')
 elif args.net=='res34':
     net = ResNet34()
@@ -166,14 +168,14 @@ elif args.net=="mlpmixer":
     patch_size = args.patch,
     dim = 512,
     depth = 6,
-    num_classes = 10
+    num_classes = args.n_classes
 )
 elif args.net=="vit_small":
     from models.vit_small import ViT
     net = ViT(
     image_size = size,
     patch_size = args.patch,
-    num_classes = 10,
+    num_classes = args.n_classes,
     dim = int(args.dimhead),
     depth = 6,
     heads = 8,
@@ -186,7 +188,7 @@ elif args.net=="vit_tiny":
     net = ViT(
     image_size = size,
     patch_size = args.patch,
-    num_classes = 10,
+    num_classes = args.n_classes,
     dim = int(args.dimhead),
     depth = 4,
     heads = 6,
@@ -199,7 +201,7 @@ elif args.net=="simplevit":
     net = SimpleViT(
     image_size = size,
     patch_size = args.patch,
-    num_classes = 10,
+    num_classes = args.n_classes,
     dim = int(args.dimhead),
     depth = 6,
     heads = 8,
@@ -210,7 +212,7 @@ elif args.net=="vit":
     net = ViT(
     image_size = size,
     patch_size = args.patch,
-    num_classes = 10,
+    num_classes = args.n_classes,
     dim = int(args.dimhead),
     depth = 6,
     heads = 8,
@@ -227,7 +229,7 @@ elif args.net=="cait":
     net = CaiT(
     image_size = size,
     patch_size = args.patch,
-    num_classes = 10,
+    num_classes = args.n_classes,
     dim = int(args.dimhead),
     depth = 6,   # depth of transformer for patch to patch attention only
     cls_depth=2, # depth of cross attention of CLS tokens to patch
@@ -242,7 +244,7 @@ elif args.net=="cait_small":
     net = CaiT(
     image_size = size,
     patch_size = args.patch,
-    num_classes = 10,
+    num_classes = args.n_classes,
     dim = int(args.dimhead),
     depth = 6,   # depth of transformer for patch to patch attention only
     cls_depth=2, # depth of cross attention of CLS tokens to patch
@@ -255,7 +257,7 @@ elif args.net=="cait_small":
 elif args.net=="swin":
     from models.swin import swin_t
     net = swin_t(window_size=args.patch,
-                num_classes=10,
+                num_classes=args.n_classes,
                 downscaling_factors=(2,2,2,1))
 
 # For Multi-GPU
@@ -320,7 +322,7 @@ class _ECELoss(nn.Module):
 # Squentropy function
 # look up how the bins were split
 def squentropy(outputs, targets):
-    num_classes = len(classes)
+    num_classes = args.n_classes
 
     # one-hot encoding of target
     target_final = torch.zeros([targets.size()[0], num_classes], device=device).scatter_(1, targets.reshape(
@@ -335,7 +337,7 @@ def squentropy(outputs, targets):
 
 # mse function
 def mean_square(outputs, targets):
-    num_classes = len(classes)
+    num_classes = args.n_classes
 
     # one-hot encoding of target
     target_final = torch.zeros([targets.size()[0], num_classes], device=device).scatter_(1, targets.reshape(
