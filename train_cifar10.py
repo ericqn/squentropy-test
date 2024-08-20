@@ -127,12 +127,12 @@ if args.dataset == "cifar10":
     sqLoss_t = 1
     sqLoss_M = 10
 elif args.dataset == "mnist":
-    train_set = torchvision.datasets.MNIST(root=root, train=True, download=True,
+    trainset = torchvision.datasets.MNIST(root='./data', train=True, download=True,
                                             transform=transforms.Compose([
                                                 transforms.ToTensor(),
                                                 transforms.Normalize((0.1307,), (0.3081,))
                                             ]))
-    test_set = torchvision.datasets.MNIST(root=root, train=False, download=True,
+    testset = torchvision.datasets.MNIST(root='./data', train=False, download=True,
                                             transform=transforms.Compose([
                                                 transforms.ToTensor(),
                                                 transforms.Normalize((0.1307,), (0.3081,))
@@ -398,6 +398,13 @@ def train(epoch):
 
     for batch_idx, (inputs, targets) in enumerate(trainloader):
         inputs, targets = inputs.to(device), targets.to(device)
+
+        # temporary for mnist dataset
+        input_channels = 1
+        seq_length = int(784 / input_channels)
+        if args.dataset == 'mnist':
+            inputs = inputs.view(-1, input_channels, seq_length)
+
         # Train with amp
         with torch.cuda.amp.autocast(enabled=use_amp):
             outputs = net(inputs)
@@ -442,6 +449,13 @@ def test(epoch):
     with torch.no_grad():
         for batch_idx, (inputs, targets) in enumerate(testloader):
             inputs, targets = inputs.to(device), targets.to(device)
+            
+            # temporary for mnist dataset
+            input_channels = 1
+            seq_length = int(784 / input_channels)
+            if args.dataset == 'mnist':
+                inputs = inputs.view(-1, input_channels, seq_length)
+
             outputs = net(inputs)
 
             # determining loss function
