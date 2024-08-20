@@ -115,6 +115,13 @@ if args.dataset == "cifar_10":
 elif args.dataset == "svhn":
     trainset = torchvision.datasets.SVHN(root='./data', split='train', download=True, transform=transform_train)
     testset = torchvision.datasets.SVHN(root='./data', split='test', download=True, transform=transform_test)
+elif args.dataset == "cifar_100":
+    trainset = torchvision.datasets.CIFAR100(root='./data', split='train', download=True, transform=transform_train)
+    testset = torchvision.datasets.CIFAR100(root='./data', split='test', download=True, transform=transform_test)
+
+    # Change rescale variables as needed
+    sqLoss_t = 1
+    sqLoss_M = 10
 else:
     raise Exception(f'\nInvalid dataset function input: {args.dataset} \
                                 \nPlease input a valid dataset as input to the dataset parameter\n')
@@ -128,8 +135,10 @@ classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship'
 print('==> Building model..')
 if args.net=='res18':
     net = ResNet18()
+elif args.net=='wide_res':
+    net = WideResNet()
 elif args.net=='vgg':
-    net = torchvision.models.vgg11_bn(weights=None, num_classes=args.num_classes)
+    net = torchvision.models.vgg11_bn(weights=None, num_classes=10)
     # net = VGG('VGG11')
     # net = VGG('VGG19')
 elif args.net=='res34':
@@ -287,7 +296,6 @@ class _ECELoss(nn.Module):
         accuracies = predictions.eq(labels)
         ece = torch.zeros(1, device=logits.device)
 
-        
         for bin_lower, bin_upper in zip(self.bin_lowers, self.bin_uppers):
             # Calculated |confidence - accuracy| in each bin
             in_bin = confidences.gt(bin_lower.item()) * confidences.le(bin_upper.item())
