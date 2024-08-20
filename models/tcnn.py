@@ -68,7 +68,6 @@ class TemporalConvNet(nn.Module):
             out_channels = num_channels[i]
             layers += [TemporalBlock(in_channels, out_channels, kernel_size, stride=1, dilation=dilation_size,
                                      padding=(kernel_size-1) * dilation_size, dropout=dropout)]
-
         self.network = nn.Sequential(*layers)
 
     def forward(self, x):
@@ -82,6 +81,7 @@ class TCN(nn.Module):
 
     def forward(self, inputs):
         """Inputs have to have dimension (N, C_in, L_in)"""
+        inputs = torch.reshape(inputs, (-1, 1, 784))
         y1 = self.tcn(inputs)  # input should have dimension (N, C, L)
         o = self.linear(y1[:, :, -1])
         return F.log_softmax(o, dim=1)
