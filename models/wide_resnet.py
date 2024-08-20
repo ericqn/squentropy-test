@@ -1,4 +1,12 @@
-# Wide Resnet implementation from https://github.com/xternalz/WideResNet-pytorch/blob/master/wideresnet.py
+"""
+Wide Residual Networks (WideResNets) in PyTorch, (2019), Github repository
+https://github.com/xternalz/WideResNet-pytorch/blob/master/wideresnet.py
+
+Paper Citation:
+Hui, L. and Belkin, M. 
+Evaluation of neural architectures trained with square loss vs cross-entropy in classification tasks. 
+arXiv preprint arXiv:2006.07322, 2020.
+"""
 
 import math
 import torch

@@ -25,7 +25,6 @@ import csv
 import time
 
 from models import *
-from models import wide_resnet
 from utils import progress_bar
 from randomaug import RandAugment
 from models.vit import ViT
@@ -144,9 +143,6 @@ classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship'
 print('==> Building model..')
 if args.net=='res18':
     net = ResNet18()
-elif args.net=='wide_res':
-    from models.wide_resnet import WideResNet
-    net = WideResNet(num_classes=args.n_classes)
 elif args.net=='vgg':
     # net used in squentropy paper
     net = torchvision.models.vgg11_bn(weights=None, num_classes=args.n_classes)
@@ -157,6 +153,20 @@ elif args.net=='res50':
     net = ResNet50()
 elif args.net=='res101':
     net = ResNet101()
+elif args.net=='wide_res':
+    from models.wide_resnet import WideResNet
+    net = WideResNet(num_classes=args.n_classes)
+elif args.net=='tcnn':
+    from models.tcnn import TCN
+    # Default hyperparam config from repo
+    hidden_layer_units = 25
+    num_levels = 8
+    net = TCN(input_size=1, 
+              output_size=args.n_classes, 
+              num_channels=[hidden_layer_units]*num_levels,
+              kernel_size=7,
+              dropout=0.05
+              )
 elif args.net=="convmixer":
     # from paper, accuracy >96%. you can tune the depth and dim to scale accuracy and speed.
     net = ConvMixer(256, 16, kernel_size=args.convkernel, patch_size=1, n_classes=10)
