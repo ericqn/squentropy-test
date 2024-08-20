@@ -25,6 +25,7 @@ import csv
 import time
 
 from models import *
+from models import wide_resnet
 from utils import progress_bar
 from randomaug import RandAugment
 from models.vit import ViT
@@ -92,11 +93,18 @@ transform_train = transforms.Compose([
     transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
 ])
 
+like_transform_train = transforms.Compose([
+    transforms.ToTensor(),
+    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+])
+
 transform_test = transforms.Compose([
     transforms.Resize(size),
     transforms.ToTensor(),
     transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
 ])
+
+like_transform_test = transforms.Compose
 
 # Add RandAugment with N, M(hyperparameter)
 if aug:  
@@ -105,7 +113,7 @@ if aug:
 
 # Prepare dataset based on arg
 
-if args.dataset == "cifar_10":
+if args.dataset == "cifar10":
     trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transform_train)
     testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=transform_test)
 
@@ -115,9 +123,9 @@ if args.dataset == "cifar_10":
 elif args.dataset == "svhn":
     trainset = torchvision.datasets.SVHN(root='./data', split='train', download=True, transform=transform_train)
     testset = torchvision.datasets.SVHN(root='./data', split='test', download=True, transform=transform_test)
-elif args.dataset == "cifar_100":
-    trainset = torchvision.datasets.CIFAR100(root='./data', split='train', download=True, transform=transform_train)
-    testset = torchvision.datasets.CIFAR100(root='./data', split='test', download=True, transform=transform_test)
+elif args.dataset == "cifar100":
+    trainset = torchvision.datasets.CIFAR100(root='./data', train=True, download=True, transform=transform_train)
+    testset = torchvision.datasets.CIFAR100(root='./data', train=False, download=True, transform=transform_test)
 
     # Change rescale variables as needed
     sqLoss_t = 1
@@ -136,10 +144,10 @@ print('==> Building model..')
 if args.net=='res18':
     net = ResNet18()
 elif args.net=='wide_res':
-    net = WideResNet()
+    net = WideResNet(num_classes=100)
 elif args.net=='vgg':
+    # net used in squentropy paper
     net = torchvision.models.vgg11_bn(weights=None, num_classes=10)
-    # net = VGG('VGG11')
     # net = VGG('VGG19')
 elif args.net=='res34':
     net = ResNet34()

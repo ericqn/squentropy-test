@@ -1,6 +1,6 @@
 #!/bin/bash
-#SBATCH -J cifar_10        # Job name
-#SBATCH -o /u/enguyen3/squentropy-test/cifar_10_log.%j.log   # define stdout filename; %j expands to jobid; to redirect stderr elsewhere, duplicate this line with -e instead
+#SBATCH -J sqen_test        # Job name
+#SBATCH -o /u/enguyen3/squentropy-test/run_log.%j.log   # define stdout filename; %j expands to jobid; to redirect stderr elsewhere, duplicate this line with -e instead
 #SBATCH --mail-user=ern002@ucsd.edu
 #SBATCH --mail-type=FAIL,TIME_LIMIT # get notified via email on job failure or time limit reached
 #SBATCH --partition=gpuA40x4        # specify queue, if this doesn’t submit try gpu-shared
