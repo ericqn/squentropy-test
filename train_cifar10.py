@@ -85,6 +85,7 @@ if args.net=="vit_timm":
 else:
     size = imsize
 
+# maybe keep, maybe delete
 transform_train = transforms.Compose([
     transforms.RandomCrop(32, padding=4),
     transforms.Resize(size),
@@ -93,18 +94,11 @@ transform_train = transforms.Compose([
     transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
 ])
 
-like_transform_train = transforms.Compose([
-    transforms.ToTensor(),
-    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
-])
-
 transform_test = transforms.Compose([
     transforms.Resize(size),
     transforms.ToTensor(),
     transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
 ])
-
-like_transform_test = transforms.Compose
 
 # Add RandAugment with N, M(hyperparameter)
 if aug:  
@@ -114,20 +108,55 @@ if aug:
 # Prepare dataset based on arg
 
 if args.dataset == "cifar10":
-    trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transform_train)
-    testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=transform_test)
+    trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, 
+                                            transform=transforms.Compose([
+                                                transforms.RandomCrop(32, padding=4),
+                                                transforms.Resize(size),
+                                                transforms.RandomHorizontalFlip(),
+                                                transforms.ToTensor(),
+                                                transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+                                            ]))
+    testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, 
+                                            transform=transforms.Compose([
+                                                transforms.Resize(size),
+                                                transforms.ToTensor(),
+                                                transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+                                            ]))
 
-    # Change rescale variables as needed
+    # Change mse rescale variables as needed
     sqLoss_t = 1
     sqLoss_M = 10
+elif args.dataset == "mnist":
+    train_set = torchvision.datasets.MNIST(root=root, train=True, download=True,
+                                            transform=transforms.Compose([
+                                                transforms.ToTensor(),
+                                                transforms.Normalize((0.1307,), (0.3081,))
+                                            ]))
+    test_set = torchvision.datasets.MNIST(root=root, train=False, download=True,
+                                            transform=transforms.Compose([
+                                                transforms.ToTensor(),
+                                                transforms.Normalize((0.1307,), (0.3081,))
+                                            ]))
 elif args.dataset == "svhn":
     trainset = torchvision.datasets.SVHN(root='./data', split='train', download=True, transform=transform_train)
     testset = torchvision.datasets.SVHN(root='./data', split='test', download=True, transform=transform_test)
 elif args.dataset == "cifar100":
-    trainset = torchvision.datasets.CIFAR100(root='./data', train=True, download=True, transform=transform_train)
-    testset = torchvision.datasets.CIFAR100(root='./data', train=False, download=True, transform=transform_test)
+    trainset = torchvision.datasets.CIFAR100(root='./data', train=True, download=True, 
+                                            transform=transforms.Compose([
+                                                transforms.RandomCrop(32, padding=4),
+                                                transforms.Resize(size),
+                                                transforms.RandomHorizontalFlip(),
+                                                transforms.ToTensor(),
+                                                transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+                                            ]))
+    testset = torchvision.datasets.CIFAR100(root='./data', train=False, download=True, 
+                                            transform=transforms.Compose([
+                                                transforms.Resize(size),
+                                                transforms.ToTensor(),
+                                                transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+                                            ]))
 
-    # Change rescale variables as needed
+    # Change mse rescale variables as needed
     sqLoss_t = 1
     sqLoss_M = 10
 else:
@@ -157,79 +186,81 @@ elif args.net=='wide_res':
     from models.wide_resnet import WideResNet
     net = WideResNet(num_classes=args.n_classes)
 elif args.net=='tcnn':
+    # TCNN can currently only be used with MNIST
     from models.tcnn import TCN
     # Default hyperparam config from repo
     hidden_layer_units = 25
     num_levels = 8
-    net = TCN(input_size=1, 
-              output_size=args.n_classes, 
-              num_channels=[hidden_layer_units]*num_levels,
-              kernel_size=7,
-              dropout=0.05
-              )
+    net = TCN(
+        input_size=1, 
+        output_size=args.n_classes, 
+        num_channels=[hidden_layer_units]*num_levels,
+        kernel_size=7,
+        dropout=0.05
+    )
 elif args.net=="convmixer":
     # from paper, accuracy >96%. you can tune the depth and dim to scale accuracy and speed.
     net = ConvMixer(256, 16, kernel_size=args.convkernel, patch_size=1, n_classes=10)
 elif args.net=="mlpmixer":
     from models.mlpmixer import MLPMixer
     net = MLPMixer(
-    image_size = 32,
-    channels = 3,
-    patch_size = args.patch,
-    dim = 512,
-    depth = 6,
-    num_classes = args.n_classes
-)
+        image_size = 32,
+        channels = 3,
+        patch_size = args.patch,
+        dim = 512,
+        depth = 6,
+        num_classes = args.n_classes
+    )
 elif args.net=="vit_small":
     from models.vit_small import ViT
     net = ViT(
-    image_size = size,
-    patch_size = args.patch,
-    num_classes = args.n_classes,
-    dim = int(args.dimhead),
-    depth = 6,
-    heads = 8,
-    mlp_dim = 512,
-    dropout = 0.1,
-    emb_dropout = 0.1
-)
+        image_size = size,
+        patch_size = args.patch,
+        num_classes = args.n_classes,
+        dim = int(args.dimhead),
+        depth = 6,
+        heads = 8,
+        mlp_dim = 512,
+        dropout = 0.1,
+        emb_dropout = 0.1
+    )
 elif args.net=="vit_tiny":
     from models.vit_small import ViT
     net = ViT(
-    image_size = size,
-    patch_size = args.patch,
-    num_classes = args.n_classes,
-    dim = int(args.dimhead),
-    depth = 4,
-    heads = 6,
-    mlp_dim = 256,
-    dropout = 0.1,
-    emb_dropout = 0.1
-)
+        image_size = size,
+        patch_size = args.patch,
+        num_classes = args.n_classes,
+        dim = int(args.dimhead),
+        depth = 4,
+        heads = 6,
+        mlp_dim = 256,
+        dropout = 0.1,
+        emb_dropout = 0.1
+    )
 elif args.net=="simplevit":
     from models.simplevit import SimpleViT
     net = SimpleViT(
-    image_size = size,
-    patch_size = args.patch,
-    num_classes = args.n_classes,
-    dim = int(args.dimhead),
-    depth = 6,
-    heads = 8,
-    mlp_dim = 512
-)
+        image_size = size,
+        patch_size = args.patch,
+        num_classes = args.n_classes,
+        dim = int(args.dimhead),
+        depth = 6,
+        heads = 8,
+        mlp_dim = 512
+    )
 elif args.net=="vit":
     # ViT for cifar10
     net = ViT(
-    image_size = size,
-    patch_size = args.patch,
-    num_classes = args.n_classes,
-    dim = int(args.dimhead),
-    depth = 6,
-    heads = 8,
-    mlp_dim = 512,
-    dropout = 0.1,
-    emb_dropout = 0.1
-)
+        image_size = size,
+        patch_size = args.patch,
+        num_classes = args.n_classes,
+        dim = int(args.dimhead),
+        depth = 6,
+        heads = 8,
+        mlp_dim = 512,
+        dropout = 0.1,
+        emb_dropout = 0.1
+    )
 elif args.net=="vit_timm":
     import timm
     net = timm.create_model("vit_base_patch16_384", pretrained=True)
