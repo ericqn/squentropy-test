@@ -51,8 +51,13 @@ class NetworkBlock(nn.Module):
     def forward(self, x):
         return self.layer(x)
 
+"""
+Hyperparameters from Like paper:
+lr=0.1, layer=28
+widen-factor=20, batch size: 128
+"""
 class WideResNet(nn.Module):
-    def __init__(self, depth=28, num_classes=10, widen_factor=1, dropRate=0.0):
+    def __init__(self, depth=28, num_classes=10, widen_factor=20, dropRate=0.0):
         super(WideResNet, self).__init__()
         nChannels = [16, 16*widen_factor, 32*widen_factor, 64*widen_factor]
         assert((depth - 4) % 6 == 0)
@@ -92,5 +97,6 @@ class WideResNet(nn.Module):
         out = out.view(-1, self.nChannels)
         return self.fc(out)
     
+
 def WideRes():
     return WideResNet()

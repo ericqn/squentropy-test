@@ -81,7 +81,7 @@ class TCN(nn.Module):
 
     def forward(self, inputs):
         """Inputs have to have dimension (N, C_in, L_in)"""
-        inputs = torch.reshape(inputs, (-1, 1, 784))
+        # add one channel unsqueeze
         y1 = self.tcn(inputs)  # input should have dimension (N, C, L)
         o = self.linear(y1[:, :, -1])
         return F.log_softmax(o, dim=1)
