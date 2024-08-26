@@ -96,13 +96,6 @@ class ReshapeTransform:
     def __call__(self, x):
         return x.view(*self.new_shape)
     
-class ReshapeTransform2(torch.nn.Module):
-    def forward(self, img, label):
-        new_img = img
-        new_label = label
-        return new_img, new_label
-
-    
 transform_train = transforms.Compose([
     transforms.RandomCrop(32, padding=4),
     transforms.Resize(size),
@@ -148,13 +141,13 @@ elif args.dataset == "mnist":
                                             transform=transforms.Compose([
                                                 transforms.ToTensor(),
                                                 transforms.Normalize((0.1307,), (0.3081,)),
-                                                ReshapeTransform(-1, 1, 784)
+                                                ReshapeTransform((1, 784))
                                             ]))
     testset = torchvision.datasets.MNIST(root='./data', train=False, download=True,
                                             transform=transforms.Compose([
                                                 transforms.ToTensor(),
                                                 transforms.Normalize((0.1307,), (0.3081,)),
-                                                ReshapeTransform(-1, 1, 784)
+                                                ReshapeTransform((1, 784))
                                             ]))
 elif args.dataset == "svhn":
     trainset = torchvision.datasets.SVHN(root='./data', split='train', download=True, transform=transform_train)
