@@ -86,6 +86,14 @@ else:
     size = imsize
 
 # maybe keep, maybe delete
+
+class ReshapeTransform:
+    def __init__(self, new_shape):
+        self.new_shape = new_shape
+
+    def __call__(self, x):
+        return x.view(*self.new_shape)
+    
 transform_train = transforms.Compose([
     transforms.RandomCrop(32, padding=4),
     transforms.Resize(size),
@@ -130,12 +138,12 @@ elif args.dataset == "mnist":
     trainset = torchvision.datasets.MNIST(root='./data', train=True, download=True,
                                             transform=transforms.Compose([
                                                 transforms.ToTensor(),
-                                                transforms.Normalize((0.1307,), (0.3081,))
+                                                transforms.Normalize((0.1307,), (0.3081,)),
                                             ]))
     testset = torchvision.datasets.MNIST(root='./data', train=False, download=True,
                                             transform=transforms.Compose([
                                                 transforms.ToTensor(),
-                                                transforms.Normalize((0.1307,), (0.3081,))
+                                                transforms.Normalize((0.1307,), (0.3081,)),
                                             ]))
 elif args.dataset == "svhn":
     trainset = torchvision.datasets.SVHN(root='./data', split='train', download=True, transform=transform_train)
@@ -162,9 +170,6 @@ elif args.dataset == "cifar100":
 else:
     raise Exception(f'\nInvalid dataset function input: {args.dataset} \
                                 \nPlease input a valid dataset as input to the dataset parameter\n')
-
-trainloader = torch.utils.data.DataLoader(trainset, batch_size=bs, shuffle=True, num_workers=8)
-testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=False, num_workers=8)
 
 classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
 
@@ -301,6 +306,14 @@ elif args.net=="swin":
                 num_classes=args.n_classes,
                 downscaling_factors=(2,2,2,1))
 
+trainloader = torch.utils.data.DataLoader(trainset, batch_size=bs, shuffle=True, num_workers=8)
+testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=False, num_workers=8)
+# For viewing data:
+train_data_iter = iter(trainloader)
+test_data_iter = iter(testloader)
+train_image, train_label = next(train_data_iter)
+test_image, test_label = next(test_data_iter)
+
 # For Multi-GPU
 if 'cuda' in device:
     print(device)
@@ -400,12 +413,6 @@ def train(epoch):
     for batch_idx, (inputs, targets) in enumerate(trainloader):
         inputs, targets = inputs.to(device), targets.to(device)
 
-        # temporary for mnist dataset
-        input_channels = 1
-        seq_length = int(784 / input_channels)
-        if args.dataset == 'mnist':
-            inputs = inputs.view(-1, input_channels, seq_length)
-
         # Train with amp
         with torch.cuda.amp.autocast(enabled=use_amp):
             outputs = net(inputs)
@@ -450,12 +457,6 @@ def test(epoch):
     with torch.no_grad():
         for batch_idx, (inputs, targets) in enumerate(testloader):
             inputs, targets = inputs.to(device), targets.to(device)
-            
-            # temporary for mnist dataset
-            input_channels = 1
-            seq_length = int(784 / input_channels)
-            if args.dataset == 'mnist':
-                inputs = inputs.view(-1, input_channels, seq_length)
 
             outputs = net(inputs)
 
