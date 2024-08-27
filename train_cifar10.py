@@ -317,7 +317,7 @@ train_data_iter = iter(trainloader)
 test_data_iter = iter(testloader)
 train_image, train_label = next(train_data_iter)
 test_image, test_label = next(test_data_iter)
-ipdb.set_trace()
+# ipdb.set_trace()
 
 # For Multi-GPU
 if 'cuda' in device:
