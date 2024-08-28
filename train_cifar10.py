@@ -171,6 +171,7 @@ elif args.dataset == "cifar100":
     # Change mse rescale variables as needed
     sqLoss_t = 1
     sqLoss_M = 10
+    args.n_classes = 100
 else:
     raise Exception(f'\nInvalid dataset function input: {args.dataset} \
                                 \nPlease input a valid dataset as input to the dataset parameter\n')
