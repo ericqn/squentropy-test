@@ -319,7 +319,8 @@ elif args.net=="swin":
 # trainloader = torch.utils.data.DataLoader(trainset, batch_size=bs, shuffle=True, num_workers=8)
 # testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=False, num_workers=8)
 
-trainloader, testloader = Dataloader.load_train_test_loaders()
+trainset, testset = Dataloader.load_train_test_sets(args.dataset, aug)
+trainloader, testloader = Dataloader.load_train_test_loaders(trainset, testset, args.bs)
 
 # For viewing data:
 train_data_iter = iter(trainloader)

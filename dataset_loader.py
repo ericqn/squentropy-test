@@ -9,7 +9,6 @@ import torchvision
 import torchvision.transforms as transforms
 
 from randomaug import RandAugment
-from train_cifar10 import args
 
 '''
 Custom torchvision transformer that reshapes data tensors into the given vector input; 
@@ -29,7 +28,7 @@ Dataloader class
 '''
 class Dataloader:
     # maybe keep, maybe delete
-    def load_transforms(dataset_arg=args.dataset):
+    def load_transforms(dataset_arg, aug):
         transform_train = None
         transform_test = None
         if (dataset_arg == "cifar10") or (dataset_arg == "cifar100") or (dataset_arg == "svhn"):
@@ -66,11 +65,11 @@ class Dataloader:
 
         return transform_train, transform_test
     
-    def load_train_test_sets(dataset_arg=args.dataset):
+    def load_train_test_sets(dataset_arg, augment_transforms):
         trainset = None
         testset = None
 
-        transform_train, transform_test = Dataloader.load_transforms()
+        transform_train, transform_test = Dataloader.load_transforms(dataset_arg, augment_transforms)
 
         if dataset_arg == "cifar10":
             trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, 
@@ -99,10 +98,10 @@ class Dataloader:
         return trainset, testset
     
     # Call this function to load final training and testing loaders
-    def load_train_test_loaders():
-        trainset, testset = Dataloader.load_train_test_sets()
+    def load_train_test_loaders(trainset, testset, batch_sz):
+        trainset, testset = Dataloader.load_train_test_sets(dataset_arg, imsize)
 
-        trainloader = torch.utils.data.DataLoader(trainset, batch_size=args.bs, shuffle=True, num_workers=8)
+        trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_sz, shuffle=True, num_workers=8)
         testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=False, num_workers=8)
 
         return trainloader, testloader
