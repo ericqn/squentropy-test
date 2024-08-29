@@ -2,7 +2,8 @@
 '''
 
 Train CIFAR10 with PyTorch and Vision Transformers!
-written by @kentaroy47, @arutema47
+Original codebase written by @kentaroy47, @arutema47
+
 
 '''
 
@@ -27,10 +28,14 @@ import csv
 import time
 
 from models import *
-from utils import progress_bar
-from randomaug import RandAugment
 from models.vit import ViT
 from models.convmixer import ConvMixer
+
+from utils import progress_bar
+from randomaug import RandAugment
+
+from dataset_loader import Dataloader
+
 import ipdb
 
 # parsers
@@ -311,8 +316,11 @@ elif args.net=="swin":
                 num_classes=args.n_classes,
                 downscaling_factors=(2,2,2,1))
 
-trainloader = torch.utils.data.DataLoader(trainset, batch_size=bs, shuffle=True, num_workers=8)
-testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=False, num_workers=8)
+# trainloader = torch.utils.data.DataLoader(trainset, batch_size=bs, shuffle=True, num_workers=8)
+# testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=False, num_workers=8)
+
+trainloader, testloader = Dataloader.load_train_test_loaders()
+
 # For viewing data:
 train_data_iter = iter(trainloader)
 test_data_iter = iter(testloader)
