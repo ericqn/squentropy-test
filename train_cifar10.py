@@ -34,8 +34,6 @@ from models.convmixer import ConvMixer
 from utils import progress_bar
 from randomaug import RandAugment
 
-from dataset_loader import Dataloader
-
 import ipdb
 
 # parsers
