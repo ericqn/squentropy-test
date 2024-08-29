@@ -49,7 +49,7 @@ parser.add_argument('--nowandb', action='store_true', help='disable wandb')
 parser.add_argument('--mixup', action='store_true', help='add mixup augumentations')
 parser.add_argument('--net', default='vit')
 parser.add_argument('--dp', action='store_true', help='use data parallel')
-parser.add_argument('--bs', default='512')
+parser.add_argument('--bs', type=int, default='512')
 parser.add_argument('--size', type=int, default="32")
 parser.add_argument('--n_epochs', type=int, default='200')
 parser.add_argument('--n_classes', type=int, default='10')
@@ -74,8 +74,6 @@ if usewandb:
     wandb.init(project="Squentropy Testing",
             name=watermark)
     wandb.config.update(args)
-
-bs = int(args.bs)
 
 use_amp = not args.noamp
 aug = args.noaug
@@ -141,7 +139,7 @@ class Dataloader:
             ])
         
         # Add RandAugment with N, M(hyperparameter)
-        if args.aug:  
+        if aug:  
             N = 2; M = 14;
             transform_train.transforms.insert(0, RandAugment(N, M))
 
@@ -159,6 +157,9 @@ class Dataloader:
                                                     transform=transform_train)
             testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, 
                                                     transform=transform_test)
+            # MSE rescale variables:
+            sqLoss_t = 1
+            sqLoss_M = 10
         elif dataset_arg == "mnist":
             trainset = torchvision.datasets.MNIST(root='./data', train=True, download=True,
                                                     transform=transform_train)
@@ -174,6 +175,11 @@ class Dataloader:
                                                     transform=transform_train)
             testset = torchvision.datasets.CIFAR100(root='./data', train=False, download=True, 
                                                     transform=transform_test)
+            args.n_classes = 100
+
+            # MSE rescale variables:
+            sqLoss_t = 1
+            sqLoss_M = 10
         else:
             raise Exception(f'\nInvalid dataset function input: {args.dataset} \
                                         \nPlease input a valid dataset as input to the dataset parameter\n')
