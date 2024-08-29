@@ -50,7 +50,7 @@ parser.add_argument('--mixup', action='store_true', help='add mixup augumentatio
 parser.add_argument('--net', default='vit')
 parser.add_argument('--dp', action='store_true', help='use data parallel')
 parser.add_argument('--bs', default='512')
-parser.add_argument('--size', default="32")
+parser.add_argument('--size', type=int, default="32")
 parser.add_argument('--n_epochs', type=int, default='200')
 parser.add_argument('--n_classes', type=int, default='10')
 parser.add_argument('--patch', default='4', type=int, help="patch for ViT")
@@ -76,7 +76,6 @@ if usewandb:
     wandb.config.update(args)
 
 bs = int(args.bs)
-imsize = int(args.size)
 
 use_amp = not args.noamp
 aug = args.noaug
@@ -85,101 +84,107 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 best_acc = 0  # best test accuracy
 start_epoch = 0  # start from epoch 0 or last checkpoint epoch
 
-# Data
-print('==> Preparing data..')
 if args.net=="vit_timm":
-    size = 384
-else:
-    size = imsize
+    args.size = 384
 
-# maybe keep, maybe delete
+'''
+Custom torchvision transformer that reshapes data tensors into the given vector input; 
+Given size must make sense-- cannot reshape (100,2,5,5) tensor into (5,5,5) tensor
 
+See https://pytorch.org/docs/stable/generated/torch.Tensor.view.html for more info
+'''
 class ReshapeTransform:
     def __init__(self, new_shape):
         self.new_shape = new_shape
 
     def __call__(self, x):
         return x.view(*self.new_shape)
+
+'''
+Dataloader class
+'''
+class Dataloader:
+
+    # Load data transformers based on dataset argument. Can also toggle whether or not data
+    # should be augmented or not
+    def load_transforms(dataset_arg):
+        transform_train = None
+        transform_test = None
+
+        image_size = args.size
+
+        if (dataset_arg == "cifar10") or (dataset_arg == "cifar100") or (dataset_arg == "svhn"):
+            transform_train = transforms.Compose([
+                transforms.RandomCrop(32, padding=4),
+                transforms.Resize(image_size),
+                transforms.RandomHorizontalFlip(),
+                transforms.ToTensor(),
+                transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+            ])
+            transform_test = transforms.Compose([
+                transforms.RandomCrop(32, padding=4),
+                transforms.Resize(image_size),
+                transforms.RandomHorizontalFlip(),
+                transforms.ToTensor(),
+                transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+            ])
+        elif dataset_arg == "mnist":
+            transform_train = transforms.Compose([
+                transforms.ToTensor(),
+                transforms.Normalize((0.1307,), (0.3081,)),
+                ReshapeTransform((1, 784))
+            ])
+            transform_test = transforms.Compose([
+                transforms.ToTensor(),
+                transforms.Normalize((0.1307,), (0.3081,)),
+                ReshapeTransform((1, 784))
+            ])
+        
+        # Add RandAugment with N, M(hyperparameter)
+        if args.aug:  
+            N = 2; M = 14;
+            transform_train.transforms.insert(0, RandAugment(N, M))
+
+        return transform_train, transform_test
     
-transform_train = transforms.Compose([
-    transforms.RandomCrop(32, padding=4),
-    transforms.Resize(size),
-    transforms.RandomHorizontalFlip(),
-    transforms.ToTensor(),
-    transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-])
+    #
+    def load_train_test_sets(dataset_arg):
+        trainset = None
+        testset = None
 
-transform_test = transforms.Compose([
-    transforms.Resize(size),
-    transforms.ToTensor(),
-    transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-])
+        transform_train, transform_test = Dataloader.load_transforms(dataset_arg)
 
-# Add RandAugment with N, M(hyperparameter)
-if aug:  
-    N = 2; M = 14;
-    transform_train.transforms.insert(0, RandAugment(N, M))
+        if dataset_arg == "cifar10":
+            trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, 
+                                                    transform=transform_train)
+            testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, 
+                                                    transform=transform_test)
+        elif dataset_arg == "mnist":
+            trainset = torchvision.datasets.MNIST(root='./data', train=True, download=True,
+                                                    transform=transform_train)
+            testset = torchvision.datasets.MNIST(root='./data', train=False, download=True,
+                                                    transform=transform_test)
+        elif dataset_arg == "svhn":
+            trainset = torchvision.datasets.SVHN(root='./data', split='train', download=True, 
+                                                 transform=transform_train)
+            testset = torchvision.datasets.SVHN(root='./data', split='test', download=True, 
+                                                transform=transform_test)
+        elif dataset_arg == "cifar100":
+            trainset = torchvision.datasets.CIFAR100(root='./data', train=True, download=True, 
+                                                    transform=transform_train)
+            testset = torchvision.datasets.CIFAR100(root='./data', train=False, download=True, 
+                                                    transform=transform_test)
+        else:
+            raise Exception(f'\nInvalid dataset function input: {args.dataset} \
+                                        \nPlease input a valid dataset as input to the dataset parameter\n')
+        return trainset, testset
+    
+    # Call this function to load final training and testing loaders given train and testing sets
+    def load_train_test_loaders(trainset, testset):
+        trainloader = torch.utils.data.DataLoader(trainset, batch_size=args.bs, shuffle=True, num_workers=8)
+        testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=False, num_workers=8)
 
-# Prepare dataset based on arg
-
-if args.dataset == "cifar10":
-    trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, 
-                                            transform=transforms.Compose([
-                                                transforms.RandomCrop(32, padding=4),
-                                                transforms.Resize(size),
-                                                transforms.RandomHorizontalFlip(),
-                                                transforms.ToTensor(),
-                                                transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-                                            ]))
-    testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, 
-                                            transform=transforms.Compose([
-                                                transforms.Resize(size),
-                                                transforms.ToTensor(),
-                                                transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-                                            ]))
-
-    # Change mse rescale variables as needed
-    sqLoss_t = 1
-    sqLoss_M = 10
-elif args.dataset == "mnist":
-    trainset = torchvision.datasets.MNIST(root='./data', train=True, download=True,
-                                            transform=transforms.Compose([
-                                                transforms.ToTensor(),
-                                                transforms.Normalize((0.1307,), (0.3081,)),
-                                                ReshapeTransform((1, 784))
-                                            ]))
-    testset = torchvision.datasets.MNIST(root='./data', train=False, download=True,
-                                            transform=transforms.Compose([
-                                                transforms.ToTensor(),
-                                                transforms.Normalize((0.1307,), (0.3081,)),
-                                                ReshapeTransform((1, 784))
-                                            ]))
-elif args.dataset == "svhn":
-    trainset = torchvision.datasets.SVHN(root='./data', split='train', download=True, transform=transform_train)
-    testset = torchvision.datasets.SVHN(root='./data', split='test', download=True, transform=transform_test)
-elif args.dataset == "cifar100":
-    trainset = torchvision.datasets.CIFAR100(root='./data', train=True, download=True, 
-                                            transform=transforms.Compose([
-                                                transforms.RandomCrop(32, padding=4),
-                                                transforms.Resize(size),
-                                                transforms.RandomHorizontalFlip(),
-                                                transforms.ToTensor(),
-                                                transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-                                            ]))
-    testset = torchvision.datasets.CIFAR100(root='./data', train=False, download=True, 
-                                            transform=transforms.Compose([
-                                                transforms.Resize(size),
-                                                transforms.ToTensor(),
-                                                transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-                                            ]))
-
-    # Change mse rescale variables as needed
-    sqLoss_t = 1
-    sqLoss_M = 10
-    args.n_classes = 100
-else:
-    raise Exception(f'\nInvalid dataset function input: {args.dataset} \
-                                \nPlease input a valid dataset as input to the dataset parameter\n')
+        return trainloader, testloader
 
 classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
 
@@ -319,8 +324,8 @@ elif args.net=="swin":
 # trainloader = torch.utils.data.DataLoader(trainset, batch_size=bs, shuffle=True, num_workers=8)
 # testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=False, num_workers=8)
 
-trainset, testset = Dataloader.load_train_test_sets(args.dataset, aug)
-trainloader, testloader = Dataloader.load_train_test_loaders(trainset, testset, args.bs)
+trainset, testset = Dataloader.load_train_test_sets(args.dataset)
+trainloader, testloader = Dataloader.load_train_test_loaders(trainset, testset)
 
 # For viewing data:
 train_data_iter = iter(trainloader)

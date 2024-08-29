@@ -28,20 +28,20 @@ Dataloader class
 '''
 class Dataloader:
     # maybe keep, maybe delete
-    def load_transforms(dataset_arg, aug):
+    def load_transforms(dataset_arg, aug, image_size):
         transform_train = None
         transform_test = None
         if (dataset_arg == "cifar10") or (dataset_arg == "cifar100") or (dataset_arg == "svhn"):
             transform_train = transforms.Compose([
                 transforms.RandomCrop(32, padding=4),
-                transforms.Resize(size),
+                transforms.Resize(image_size),
                 transforms.RandomHorizontalFlip(),
                 transforms.ToTensor(),
                 transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
             ])
             transform_test = transforms.Compose([
                 transforms.RandomCrop(32, padding=4),
-                transforms.Resize(size),
+                transforms.Resize(image_size),
                 transforms.RandomHorizontalFlip(),
                 transforms.ToTensor(),
                 transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
@@ -65,11 +65,11 @@ class Dataloader:
 
         return transform_train, transform_test
     
-    def load_train_test_sets(dataset_arg, augment_transforms):
+    def load_train_test_sets(dataset_arg, augment_transforms, image_size):
         trainset = None
         testset = None
 
-        transform_train, transform_test = Dataloader.load_transforms(dataset_arg, augment_transforms)
+        transform_train, transform_test = Dataloader.load_transforms(dataset_arg, augment_transforms, image_size)
 
         if dataset_arg == "cifar10":
             trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, 
@@ -91,7 +91,6 @@ class Dataloader:
                                                     transform=transform_train)
             testset = torchvision.datasets.CIFAR100(root='./data', train=False, download=True, 
                                                     transform=transform_test)
-            args.n_classes = 100
         else:
             raise Exception(f'\nInvalid dataset function input: {args.dataset} \
                                         \nPlease input a valid dataset as input to the dataset parameter\n')
