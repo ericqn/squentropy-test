@@ -112,7 +112,7 @@ class Dataloader:
         if (dataset_arg == "cifar10") or (dataset_arg == "cifar100") or (dataset_arg == "svhn"):
             transform_train = transforms.Compose([
                 transforms.RandomCrop(32, padding=4),
-                transforms.Resize(image_size),
+                transforms.Resize(args.size),
                 transforms.RandomHorizontalFlip(),
                 transforms.ToTensor(),
                 transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
@@ -133,6 +133,13 @@ class Dataloader:
                 transforms.Normalize((0.1307,), (0.3081,)),
                 ReshapeTransform((1, 784))
             ])
+        else:
+            raise Exception(f'\nInvalid dataset function input: {args.dataset} \
+                                        \nPlease input a valid dataset as input to the dataset parameter\n')
+        
+        if (transform_train == None) or (transform_test == None):
+            raise Exception(f'\nInvalid dataset function input: {args.dataset} \
+                                        \nPlease input a valid dataset as input to the dataset parameter\n')
         
         # Add RandAugment with N, M(hyperparameter)
         if aug:  
@@ -188,83 +195,83 @@ class Dataloader:
 
         return trainloader, testloader
 
-# previous dataloader
-# transform_train = transforms.Compose([
-#     transforms.RandomCrop(32, padding=4),
-#     transforms.Resize(args.size),
-#     transforms.RandomHorizontalFlip(),
-#     transforms.ToTensor(),
-#     transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-# ])
+previous dataloader
+transform_train = transforms.Compose([
+    transforms.RandomCrop(32, padding=4),
+    transforms.Resize(args.size),
+    transforms.RandomHorizontalFlip(),
+    transforms.ToTensor(),
+    transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+])
 
-# transform_test = transforms.Compose([
-#     transforms.Resize(args.size),
-#     transforms.ToTensor(),
-#     transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-# ])
+transform_test = transforms.Compose([
+    transforms.Resize(args.size),
+    transforms.ToTensor(),
+    transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+])
 
-# if aug:  
-#     N = 2; M = 14;
-#     transform_train.transforms.insert(0, RandAugment(N, M))
+if aug:  
+    N = 2; M = 14;
+    transform_train.transforms.insert(0, RandAugment(N, M))
 
-# if args.dataset == "cifar10":
-#     trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, 
-#                                             transform=transforms.Compose([
-#                                                 transforms.RandomCrop(32, padding=4),
-#                                                 transforms.Resize(args.size),
-#                                                 transforms.RandomHorizontalFlip(),
-#                                                 transforms.ToTensor(),
-#                                                 transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-#                                             ]))
-#     testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, 
-#                                             transform=transforms.Compose([
-#                                                 transforms.Resize(args.size),
-#                                                 transforms.ToTensor(),
-#                                                 transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-#                                             ]))
+if args.dataset == "cifar10":
+    trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, 
+                                            transform=transforms.Compose([
+                                                transforms.RandomCrop(32, padding=4),
+                                                transforms.Resize(args.size),
+                                                transforms.RandomHorizontalFlip(),
+                                                transforms.ToTensor(),
+                                                transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+                                            ]))
+    testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, 
+                                            transform=transforms.Compose([
+                                                transforms.Resize(args.size),
+                                                transforms.ToTensor(),
+                                                transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+                                            ]))
 
-#     # Change mse rescale variables as needed
-#     sqLoss_t = 1
-#     sqLoss_M = 10
-# elif args.dataset == "mnist":
-#     trainset = torchvision.datasets.MNIST(root='./data', train=True, download=True,
-#                                             transform=transforms.Compose([
-#                                                 transforms.ToTensor(),
-#                                                 transforms.Normalize((0.1307,), (0.3081,)),
-#                                                 ReshapeTransform((1, 784))
-#                                             ]))
-#     testset = torchvision.datasets.MNIST(root='./data', train=False, download=True,
-#                                             transform=transforms.Compose([
-#                                                 transforms.ToTensor(),
-#                                                 transforms.Normalize((0.1307,), (0.3081,)),
-#                                                 ReshapeTransform((1, 784))
-#                                             ]))
-# elif args.dataset == "svhn":
-#     trainset = torchvision.datasets.SVHN(root='./data', split='train', download=True, transform=transform_train)
-#     testset = torchvision.datasets.SVHN(root='./data', split='test', download=True, transform=transform_test)
-# elif args.dataset == "cifar100":
-#     trainset = torchvision.datasets.CIFAR100(root='./data', train=True, download=True, 
-#                                             transform=transforms.Compose([
-#                                                 transforms.RandomCrop(32, padding=4),
-#                                                 transforms.Resize(args.size),
-#                                                 transforms.RandomHorizontalFlip(),
-#                                                 transforms.ToTensor(),
-#                                                 transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-#                                             ]))
-#     testset = torchvision.datasets.CIFAR100(root='./data', train=False, download=True, 
-#                                             transform=transforms.Compose([
-#                                                 transforms.Resize(args.size),
-#                                                 transforms.ToTensor(),
-#                                                 transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-#                                             ]))
+    # Change mse rescale variables as needed
+    sqLoss_t = 1
+    sqLoss_M = 10
+elif args.dataset == "mnist":
+    trainset = torchvision.datasets.MNIST(root='./data', train=True, download=True,
+                                            transform=transforms.Compose([
+                                                transforms.ToTensor(),
+                                                transforms.Normalize((0.1307,), (0.3081,)),
+                                                ReshapeTransform((1, 784))
+                                            ]))
+    testset = torchvision.datasets.MNIST(root='./data', train=False, download=True,
+                                            transform=transforms.Compose([
+                                                transforms.ToTensor(),
+                                                transforms.Normalize((0.1307,), (0.3081,)),
+                                                ReshapeTransform((1, 784))
+                                            ]))
+elif args.dataset == "svhn":
+    trainset = torchvision.datasets.SVHN(root='./data', split='train', download=True, transform=transform_train)
+    testset = torchvision.datasets.SVHN(root='./data', split='test', download=True, transform=transform_test)
+elif args.dataset == "cifar100":
+    trainset = torchvision.datasets.CIFAR100(root='./data', train=True, download=True, 
+                                            transform=transforms.Compose([
+                                                transforms.RandomCrop(32, padding=4),
+                                                transforms.Resize(args.size),
+                                                transforms.RandomHorizontalFlip(),
+                                                transforms.ToTensor(),
+                                                transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+                                            ]))
+    testset = torchvision.datasets.CIFAR100(root='./data', train=False, download=True, 
+                                            transform=transforms.Compose([
+                                                transforms.Resize(args.size),
+                                                transforms.ToTensor(),
+                                                transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+                                            ]))
 
-#     # Change mse rescale variables as needed
-#     sqLoss_t = 1
-#     sqLoss_M = 10
-#     args.n_classes = 100
-# else:
-#     raise Exception(f'\nInvalid dataset function input: {args.dataset} \
-#                                 \nPlease input a valid dataset as input to the dataset parameter\n')
+    # Change mse rescale variables as needed
+    sqLoss_t = 1
+    sqLoss_M = 10
+    args.n_classes = 100
+else:
+    raise Exception(f'\nInvalid dataset function input: {args.dataset} \
+                                \nPlease input a valid dataset as input to the dataset parameter\n')
 
 classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
 
@@ -401,11 +408,11 @@ elif args.net=="swin":
                 num_classes=args.n_classes,
                 downscaling_factors=(2,2,2,1))
 
-# trainloader = torch.utils.data.DataLoader(trainset, batch_size=bs, shuffle=True, num_workers=8)
-# testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=False, num_workers=8)
+trainloader = torch.utils.data.DataLoader(trainset, batch_size=bs, shuffle=True, num_workers=8)
+testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=False, num_workers=8)
 
-trainset, testset = Dataloader.load_train_test_sets(args.dataset)
-trainloader, testloader = Dataloader.load_train_test_loaders(trainset, testset)
+# trainset, testset = Dataloader.load_train_test_sets(args.dataset)
+# trainloader, testloader = Dataloader.load_train_test_loaders(trainset, testset)
 
 # For viewing data:
 train_data_iter = iter(trainloader)
@@ -639,7 +646,8 @@ for epoch in range(start_epoch, args.n_epochs):
     if acc > eval_acc_max:
         eval_acc_max = acc
     
-    scheduler.step(epoch-1) # step cosine scheduling
+    # scheduler.step(epoch-1) # step cosine scheduling
+    scheduler.step() # step cosine scheduling
     
     list_loss.append(val_loss)
     list_acc.append(acc)
