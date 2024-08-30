@@ -1,0 +1,36 @@
+{
+    "os": "macOS-12.7.4-arm64-arm-64bit",
+    "python": "3.12.4",
+    "heartbeatAt": "2024-08-30T00:07:51.796482",
+    "startedAt": "2024-08-30T00:07:50.966082",
+    "docker": null,
+    "cuda": null,
+    "args": [],
+    "state": "running",
+    "program": "<python with no main file>",
+    "codePathLocal": null,
+    "git": {
+        "remote": "git@github.com:ericqn/squentropy-test.git",
+        "commit": "675f761eda35527ca843f405bc6b5c1d588fbea4"
+    },
+    "email": "ericqn1234@gmail.com",
+    "root": "/Users/ericnguyen/Belkin Lab/squentropy-test-folder",
+    "host": "Erics-MacBook-Pro-3.local",
+    "username": "ericnguyen",
+    "executable": "/Users/ericnguyen/anaconda3/envs/belkin/bin/python",
+    "cpu_count": 8,
+    "cpu_count_logical": 8,
+    "disk": {
+        "/": {
+            "total": 460.4317207336426,
+            "used": 244.79342651367188
+        }
+    },
+    "gpuapple": {
+        "type": "arm",
+        "vendor": "Apple"
+    },
+    "memory": {
+        "total": 16.0
+    }
+}

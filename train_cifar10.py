@@ -195,7 +195,7 @@ class Dataloader:
 
         return trainloader, testloader
 
-previous dataloader
+# previous dataloader
 transform_train = transforms.Compose([
     transforms.RandomCrop(32, padding=4),
     transforms.Resize(args.size),
@@ -307,7 +307,7 @@ elif args.net=='tcnn':
     )
 elif args.net=="convmixer":
     # from paper, accuracy >96%. you can tune the depth and dim to scale accuracy and speed.
-    net = ConvMixer(256, 16, kernel_size=args.convkernel, patch_size=1, n_classes=10)
+    net = ConvMixer(256, 16, kernel_size=args.convkernel, patch_size=1, n_classes=args.n_classes)
 elif args.net=="mlpmixer":
     from models.mlpmixer import MLPMixer
     net = MLPMixer(
@@ -321,7 +321,7 @@ elif args.net=="mlpmixer":
 elif args.net=="vit_small":
     from models.vit_small import ViT
     net = ViT(
-        image_size = size,
+        image_size = args.size,
         patch_size = args.patch,
         num_classes = args.n_classes,
         dim = int(args.dimhead),
@@ -334,7 +334,7 @@ elif args.net=="vit_small":
 elif args.net=="vit_tiny":
     from models.vit_small import ViT
     net = ViT(
-        image_size = size,
+        image_size = args.size,
         patch_size = args.patch,
         num_classes = args.n_classes,
         dim = int(args.dimhead),
@@ -358,7 +358,7 @@ elif args.net=="simplevit":
 elif args.net=="vit":
     # ViT for cifar10
     net = ViT(
-        image_size = size,
+        image_size = args.size,
         patch_size = args.patch,
         num_classes = args.n_classes,
         dim = int(args.dimhead),
@@ -375,7 +375,7 @@ elif args.net=="vit_timm":
 elif args.net=="cait":
     from models.cait import CaiT
     net = CaiT(
-    image_size = size,
+    image_size = args.size,
     patch_size = args.patch,
     num_classes = args.n_classes,
     dim = int(args.dimhead),
@@ -390,7 +390,7 @@ elif args.net=="cait":
 elif args.net=="cait_small":
     from models.cait import CaiT
     net = CaiT(
-    image_size = size,
+    image_size = args.size,
     patch_size = args.patch,
     num_classes = args.n_classes,
     dim = int(args.dimhead),
@@ -408,7 +408,7 @@ elif args.net=="swin":
                 num_classes=args.n_classes,
                 downscaling_factors=(2,2,2,1))
 
-trainloader = torch.utils.data.DataLoader(trainset, batch_size=bs, shuffle=True, num_workers=8)
+trainloader = torch.utils.data.DataLoader(trainset, batch_size=args.bs, shuffle=True, num_workers=8)
 testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=False, num_workers=8)
 
 # trainset, testset = Dataloader.load_train_test_sets(args.dataset)

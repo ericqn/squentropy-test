@@ -1,0 +1,37 @@
+{
+    "os": "macOS-12.7.4-arm64-arm-64bit",
+    "python": "3.12.4",
+    "heartbeatAt": "2024-08-30T00:05:56.436765",
+    "startedAt": "2024-08-30T00:05:56.080090",
+    "docker": null,
+    "cuda": null,
+    "args": [],
+    "state": "running",
+    "program": "/Users/ericnguyen/Belkin Lab/squentropy-test-folder/train_cifar10.py",
+    "codePathLocal": "train_cifar10.py",
+    "codePath": "train_cifar10.py",
+    "git": {
+        "remote": "git@github.com:ericqn/squentropy-test.git",
+        "commit": "675f761eda35527ca843f405bc6b5c1d588fbea4"
+    },
+    "email": "ericqn1234@gmail.com",
+    "root": "/Users/ericnguyen/Belkin Lab/squentropy-test-folder",
+    "host": "Erics-MacBook-Pro-3.local",
+    "username": "ericnguyen",
+    "executable": "/Users/ericnguyen/anaconda3/envs/belkin/bin/python",
+    "cpu_count": 8,
+    "cpu_count_logical": 8,
+    "disk": {
+        "/": {
+            "total": 460.4317207336426,
+            "used": 244.79178619384766
+        }
+    },
+    "gpuapple": {
+        "type": "arm",
+        "vendor": "Apple"
+    },
+    "memory": {
+        "total": 16.0
+    }
+}
