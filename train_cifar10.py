@@ -216,19 +216,9 @@ if aug:
 
 if args.dataset == "cifar10":
     trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, 
-                                            transform=transforms.Compose([
-                                                transforms.RandomCrop(32, padding=4),
-                                                transforms.Resize(args.size),
-                                                transforms.RandomHorizontalFlip(),
-                                                transforms.ToTensor(),
-                                                transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-                                            ]))
+                                            transform=transform_train)
     testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, 
-                                            transform=transforms.Compose([
-                                                transforms.Resize(args.size),
-                                                transforms.ToTensor(),
-                                                transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-                                            ]))
+                                            transform=transform_test)
 
     # Change mse rescale variables as needed
     sqLoss_t = 1
@@ -414,11 +404,11 @@ testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=False,
 # trainset, testset = Dataloader.load_train_test_sets(args.dataset)
 # trainloader, testloader = Dataloader.load_train_test_loaders(trainset, testset)
 
-# For viewing data:
-train_data_iter = iter(trainloader)
-test_data_iter = iter(testloader)
-train_image, train_label = next(train_data_iter)
-test_image, test_label = next(test_data_iter)
+# For viewing data (debugging purposes):
+# train_data_iter = iter(trainloader)
+# test_data_iter = iter(testloader)
+# train_image, train_label = next(train_data_iter)
+# test_image, test_label = next(test_data_iter)
 # ipdb.set_trace()
 
 # For Multi-GPU
@@ -464,7 +454,6 @@ class _ECELoss(nn.Module):
     def forward(self, logits, labels):
         softmaxes = F.softmax(logits, dim=1)
         confidences, predictions = torch.max(softmaxes, 1)
-        # TODO: Look at accuracies in correct and incorrect bins using ipdb
         accuracies = predictions.eq(labels)
         ece = torch.zeros(1, device=logits.device)
 

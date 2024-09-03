@@ -44,6 +44,7 @@ parser.add_argument('--dp', action='store_true', help='use data parallel')
 parser.add_argument('--bs', default='512')
 parser.add_argument('--size', default="32")
 parser.add_argument('--n_epochs', type=int, default='200')
+parser.add_argument('--n_classes', type=int, default='10')
 parser.add_argument('--patch', default='4', type=int, help="patch for ViT")
 parser.add_argument('--dimhead', default="512", type=int)
 parser.add_argument('--convkernel', default='8', type=int, help="parameter for convmixer")
@@ -63,6 +64,7 @@ if usewandb:
 
 bs = int(args.bs)
 imsize = int(args.size)
+n_classes = args.n_classes
 
 use_amp = not args.noamp
 aug = args.noaug
@@ -77,6 +79,13 @@ if args.net=="vit_timm":
     size = 384
 else:
     size = imsize
+
+class ReshapeTransform:
+    def __init__(self, new_shape):
+        self.new_shape = new_shape
+
+    def __call__(self, x):
+        return x.view(*self.new_shape)
 
 transform_train = transforms.Compose([
     transforms.RandomCrop(32, padding=4),
@@ -101,12 +110,31 @@ if aug:
 if (args.dataset == 'cifar10'):
     trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transform_train)
     testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=transform_test)
+if(args.dataset == 'cifar100'):
+    trainset = torchvision.datasets.CIFAR100(root='./data', train=True, download=True, transform=transform_train)
+    testset = torchvision.datasets.CIFAR100(root='./data', train=False, download=True, transform=transform_test)
+
+    n_classes = 100
 elif (args.dataset == 'svhn'):
     trainset = torchvision.datasets.SVHN(root='./data', split='train', download=True, transform=transform_train)
     testset = torchvision.datasets.SVHN(root='./data', split='test', download=True, transform=transform_test)
+elif (args.dataset == 'mnist'):
+    trainset = torchvision.datasets.MNIST(root='./data', train=True, download=True,
+                                            transform=transforms.Compose([
+                                                transforms.ToTensor(),
+                                                transforms.Normalize((0.1307,), (0.3081,)),
+                                                ReshapeTransform((1, 784))
+                                            ]))
+    testset = torchvision.datasets.MNIST(root='./data', train=False, download=True,
+                                            transform=transforms.Compose([
+                                                transforms.ToTensor(),
+                                                transforms.Normalize((0.1307,), (0.3081,)),
+                                                ReshapeTransform((1, 784))
+                                            ]))
 else:
     raise Exception(f'\nInvalid dataset function input: {args.dataset} \
                                 \nPlease input a valid dataset as input to the dataset parameter\n')
+
 trainloader = torch.utils.data.DataLoader(trainset, batch_size=bs, shuffle=True, num_workers=8)
 testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=False, num_workers=8)
 
@@ -118,13 +146,17 @@ print('==> Building model..')
 if args.net=='res18':
     net = ResNet18()
 elif args.net=='vgg':
-    net = VGG('VGG19')
+    # net = VGG('VGG19')
+    net = torchvision.models.vgg11_bn(weights=None, num_classes=n_classes)
 elif args.net=='res34':
     net = ResNet34()
 elif args.net=='res50':
     net = ResNet50()
 elif args.net=='res101':
     net = ResNet101()
+elif args.net=='wide_res':
+    from models.wide_resnet import WideResNet
+    net = WideResNet(num_classes=n_classes)
 elif args.net=="convmixer":
     # from paper, accuracy >96%. you can tune the depth and dim to scale accuracy and speed.
     net = ConvMixer(256, 16, kernel_size=args.convkernel, patch_size=1, n_classes=10)
@@ -136,14 +168,14 @@ elif args.net=="mlpmixer":
     patch_size = args.patch,
     dim = 512,
     depth = 6,
-    num_classes = 10
+    num_classes = n_classes
 )
 elif args.net=="vit_small":
     from models.vit_small import ViT
     net = ViT(
     image_size = size,
     patch_size = args.patch,
-    num_classes = 10,
+    num_classes = n_classes,
     dim = int(args.dimhead),
     depth = 6,
     heads = 8,
@@ -156,7 +188,7 @@ elif args.net=="vit_tiny":
     net = ViT(
     image_size = size,
     patch_size = args.patch,
-    num_classes = 10,
+    num_classes = n_classes,
     dim = int(args.dimhead),
     depth = 4,
     heads = 6,
@@ -169,7 +201,7 @@ elif args.net=="simplevit":
     net = SimpleViT(
     image_size = size,
     patch_size = args.patch,
-    num_classes = 10,
+    num_classes = n_classes,
     dim = int(args.dimhead),
     depth = 6,
     heads = 8,
@@ -180,7 +212,7 @@ elif args.net=="vit":
     net = ViT(
     image_size = size,
     patch_size = args.patch,
-    num_classes = 10,
+    num_classes = n_classes,
     dim = int(args.dimhead),
     depth = 6,
     heads = 8,
@@ -197,7 +229,7 @@ elif args.net=="cait":
     net = CaiT(
     image_size = size,
     patch_size = args.patch,
-    num_classes = 10,
+    num_classes = n_classes,
     dim = int(args.dimhead),
     depth = 6,   # depth of transformer for patch to patch attention only
     cls_depth=2, # depth of cross attention of CLS tokens to patch
@@ -212,7 +244,7 @@ elif args.net=="cait_small":
     net = CaiT(
     image_size = size,
     patch_size = args.patch,
-    num_classes = 10,
+    num_classes = n_classes,
     dim = int(args.dimhead),
     depth = 6,   # depth of transformer for patch to patch attention only
     cls_depth=2, # depth of cross attention of CLS tokens to patch
