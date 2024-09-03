@@ -116,8 +116,21 @@ if(args.dataset == 'cifar100'):
 
     n_classes = 100
 elif (args.dataset == 'svhn'):
-    trainset = torchvision.datasets.SVHN(root='./data', split='train', download=True, transform=transform_train)
-    testset = torchvision.datasets.SVHN(root='./data', split='test', download=True, transform=transform_test)
+    transform_train = transforms.Compose([
+        transforms.RandomCrop(32, padding=4),
+        transforms.RandomHorizontalFlip(),
+        transforms.ToTensor(),
+        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+    ])
+    transform_train.transforms.insert(0, RandAugment(2, 14))
+
+    trainset = torchvision.datasets.SVHN(root='./data', split='train', download=True, 
+                                            transform=transform_train)
+    testset = torchvision.datasets.SVHN(root='./data', split='test', download=True, 
+                                            transform=transforms.Compose([
+                                                transforms.ToTensor(),
+                                                transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+                                            ]))
 elif (args.dataset == 'mnist'):
     trainset = torchvision.datasets.MNIST(root='./data', train=True, download=True,
                                             transform=transforms.Compose([

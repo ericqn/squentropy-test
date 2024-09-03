@@ -24,3 +24,4 @@ echo “Activated conda environment: $(conda info --envs | grep ‘*’ | awk �
 python /u/enguyen3/squentropy-test/train_cifar10.py --dataset svhn --net vgg --n_epochs 200 --loss_eq sqen --lr 0.0002
 # python /u/enguyen3/squentropy-test/train_cifar10.py --dataset svhn --net vgg --n_epochs 200 --loss_eq mse --lr 0.0002
 # python /u/enguyen3/squentropy-test/train_cifar10.py --dataset svhn --net vgg --n_epochs 200 --loss_eq cross --lr 0.0005
+# python /u/enguyen3/squentropy-test/train_old_v.py --dataset svhn --net vgg --n_epochs 200 --loss_eq sqen --lr 0.02
