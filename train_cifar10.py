@@ -64,7 +64,7 @@ args = parser.parse_args()
 usewandb = not (args.nowandb)
 if usewandb:
     import wandb
-    watermark = "{}_model:{}_lr{}_loss:{}".format(args.dataset, args.net, args.lr, args.loss_eq)
+    watermark = "{}_model:{}_loss:{}_lr:{}".format(args.dataset, args.net, args.loss_eq, args.lr)
     wandb.init(project="Squentropy Testing 2",
             name=watermark)
     wandb.config.update(args)
