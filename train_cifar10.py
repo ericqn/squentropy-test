@@ -389,11 +389,17 @@ elif args.opt == "sgd":
     
 # use cosine scheduling
 scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, args.n_epochs)
+scaler = torch.cuda.amp.GradScaler(enabled=use_amp)
 
 ##### Training
-scaler = torch.cuda.amp.GradScaler(enabled=use_amp)
 def train(epoch):
     net.train()
+
+    used_device = args.device
+    n_classes = args.n_classes
+    dataset = args.dataset
+    loss_func = Loss_Functions(device=used_device, num_classes=n_classes, dataset=dataset)
+
     train_loss = 0
     correct = 0
     total = 0
@@ -405,11 +411,11 @@ def train(epoch):
         with torch.cuda.amp.autocast(enabled=use_amp):
             outputs = net(inputs)
             if (args.loss_eq == 'sqen'):
-                loss = Loss_Functions.squentropy(outputs, targets)
+                loss = loss_func.squentropy(outputs, targets)
             elif (args.loss_eq == 'cross'):
-                loss = Loss_Functions.cross_entropy(outputs, targets)
+                loss = loss_func.cross_entropy(outputs, targets)
             elif (args.loss_eq == 'mse'):
-                loss = Loss_Functions.rescaled_mse(outputs, targets)
+                loss = loss_func.rescaled_mse(outputs, targets)
             else:
                 raise Exception(f'\nInvalid loss function input: {args.loss_eq} \
                                 \nPlease input \'sqen\', \'cross\', or \'mse\' as inputs to the loss_eq parameter\n')
@@ -430,6 +436,13 @@ def train(epoch):
 ##### Validation
 def test(epoch):
     net.eval()
+
+    used_device = args.device
+    n_classes = args.n_classes
+    dataset = args.dataset
+    loss_func = Loss_Functions(device=used_device, num_classes=n_classes, dataset=dataset)
+    ece_func = _ECELoss()
+
     test_loss = 0
     correct = 0
     total = 0
@@ -446,11 +459,11 @@ def test(epoch):
 
             # determining loss function
             if (args.loss_eq == 'sqen'):
-                loss = Loss_Functions.squentropy(outputs, targets)
+                loss = loss_func.squentropy(outputs, targets)
             elif (args.loss_eq == 'cross'):
-                loss = Loss_Functions.cross_entropy(outputs, targets)
+                loss = loss_func.cross_entropy(outputs, targets)
             elif (args.loss_eq == 'mse'):
-                loss = Loss_Functions.rescaled_mse(outputs, targets)
+                loss = loss_func.rescaled_mse(outputs, targets)
             else:
                 raise Exception(f'\nInvalid loss function input: {args.loss_eq} \
                                 \nPlease input \'sqen\', \'cross\', or \'mse\' as inputs to the loss_eq parameter\n')
@@ -482,7 +495,7 @@ def test(epoch):
     # Calculate ECE
     logits = torch.cat(logits_list)
     labels = torch.cat(labels_list)
-    ece = _ECELoss().forward(logits, labels).item()
+    ece = ece_func.forward(logits, labels).item()
     
     os.makedirs("log", exist_ok=True)
     content = time.ctime() + ' ' + f'Epoch {epoch}, lr: {optimizer.param_groups[0]["lr"]:.7f}, val loss: {(test_loss/num_testdata):.5f}, acc: {(acc):.5f}'
