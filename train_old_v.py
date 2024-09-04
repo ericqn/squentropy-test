@@ -51,13 +51,18 @@ parser.add_argument('--convkernel', default='8', type=int, help="parameter for c
 parser.add_argument('--loss_eq', default='sqen')
 parser.add_argument('--dataset', default='cifar10')
 
+# Rescaling Variables
+sqLoss_t = 1
+sqLoss_M = 1
+sqen_alpha = 1
+
 args = parser.parse_args()
 
 # take in args
 usewandb =  not args.nowandb
 if usewandb:
     import wandb
-    watermark = "{}_model:{}_lr{}_loss:{}".format(args.dataset, args.net, args.lr, args.loss_eq)
+    watermark = "(OLD_v) {}_model:{}_lr{}_loss:{}".format(args.dataset, args.net, args.lr, args.loss_eq)
     wandb.init(project="Squentropy Testing",
             name=watermark)
     wandb.config.update(args)
@@ -110,11 +115,19 @@ if aug:
 if (args.dataset == 'cifar10'):
     trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transform_train)
     testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=transform_test)
-if(args.dataset == 'cifar100'):
+
+    # Change mse rescale variables as needed
+    sqLoss_t = 1
+    sqLoss_M = 10
+elif(args.dataset == 'cifar100'):
     trainset = torchvision.datasets.CIFAR100(root='./data', train=True, download=True, transform=transform_train)
     testset = torchvision.datasets.CIFAR100(root='./data', train=False, download=True, transform=transform_test)
 
     n_classes = 100
+
+    # Change mse rescale variables as needed
+    sqLoss_t = 1
+    sqLoss_M = 10
 elif (args.dataset == 'svhn'):
     transform_train = transforms.Compose([
         transforms.RandomCrop(32, padding=4),
