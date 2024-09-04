@@ -395,10 +395,9 @@ scaler = torch.cuda.amp.GradScaler(enabled=use_amp)
 def train(epoch):
     net.train()
 
-    used_device = args.device
     n_classes = args.n_classes
     dataset = args.dataset
-    loss_func = Loss_Functions(device=used_device, num_classes=n_classes, dataset=dataset)
+    loss_func = Loss_Functions(device=device, num_classes=n_classes, dataset=dataset)
 
     train_loss = 0
     correct = 0
@@ -437,12 +436,12 @@ def train(epoch):
 def test(epoch):
     net.eval()
 
-    used_device = args.device
     n_classes = args.n_classes
     dataset = args.dataset
-    loss_func = Loss_Functions(device=used_device, num_classes=n_classes, dataset=dataset)
+    loss_func = Loss_Functions(device=device, num_classes=n_classes, dataset=dataset)
     ece_func = _ECELoss()
 
+    global best_acc
     test_loss = 0
     correct = 0
     total = 0
