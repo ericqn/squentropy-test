@@ -33,6 +33,7 @@ from models.convmixer import ConvMixer
 
 from utils import progress_bar
 from randomaug import RandAugment
+from train_functions import _ECELoss, Loss_Functions
 
 import ipdb
 
@@ -57,11 +58,6 @@ parser.add_argument('--convkernel', default='8', type=int, help="parameter for c
 parser.add_argument('--loss_eq', default='sqen')
 parser.add_argument('--dataset', default='cifar10')
 
-# Rescaling Variables
-sqLoss_t = 1
-sqLoss_M = 1
-sqen_alpha = 1
-
 args = parser.parse_args()
 
 # take in args
@@ -69,7 +65,7 @@ usewandb = not (args.nowandb)
 if usewandb:
     import wandb
     watermark = "{}_model:{}_lr{}_loss:{}".format(args.dataset, args.net, args.lr, args.loss_eq)
-    wandb.init(project="Squentropy Testing",
+    wandb.init(project="Squentropy Testing 2",
             name=watermark)
     wandb.config.update(args)
 
@@ -82,6 +78,14 @@ start_epoch = 0  # start from epoch 0 or last checkpoint epoch
 
 if args.net=="vit_timm":
     args.size = 384
+
+# Rescaling Variables
+# sqLoss_t = 1
+# sqLoss_M = 1
+# sqen_alpha = 1
+
+# if (args.dataset == 'cifar10') or (args.dataset == 'cifar100'):
+#     sqLoss_M = 10
 
 '''
 Custom torchvision transformer that reshapes data tensors into the given vector input; 
@@ -107,18 +111,18 @@ class Dataloader:
         transform_train = None
         transform_test = None
 
-        image_size = args.size
+        image_sz = args.size
 
         if (dataset_arg == "cifar10") or (dataset_arg == "cifar100"):
             transform_train = transforms.Compose([
                 transforms.RandomCrop(32, padding=4),
-                transforms.Resize(image_size),
+                transforms.Resize(image_sz),
                 transforms.RandomHorizontalFlip(),
                 transforms.ToTensor(),
                 transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
             ])
             transform_test = transforms.Compose([
-                transforms.Resize(image_size),
+                transforms.Resize(image_sz),
                 transforms.ToTensor(),
                 transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
             ])
@@ -145,11 +149,11 @@ class Dataloader:
                 ReshapeTransform((1, 784))
             ])
         else:
-            raise Exception(f'\nInvalid dataset function input: {args.dataset} \
+            raise Exception(f'\nInvalid dataset function input: {dataset_arg} \
                                         \nPlease input a valid dataset as input to the dataset parameter\n')
         
         if (transform_train == None) or (transform_test == None):
-            raise Exception(f'\nInvalid dataset function input: {args.dataset} \
+            raise Exception(f'\nInvalid dataset function input: {dataset_arg} \
                                         \nPlease input a valid dataset as input to the dataset parameter\n')
         
         # Add RandAugment with N, M(hyperparameter)
@@ -159,7 +163,7 @@ class Dataloader:
 
         return transform_train, transform_test
     
-    #
+    # Note: Modifies global variables args.n_classes
     def load_train_test_sets(dataset_arg):
         trainset = None
         testset = None
@@ -171,9 +175,6 @@ class Dataloader:
                                                     transform=transform_train)
             testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, 
                                                     transform=transform_test)
-            # MSE rescale variables:
-            sqLoss_t = 1
-            sqLoss_M = 10
         elif dataset_arg == "mnist":
             trainset = torchvision.datasets.MNIST(root='./data', train=True, download=True,
                                                     transform=transform_train)
@@ -190,231 +191,172 @@ class Dataloader:
             testset = torchvision.datasets.CIFAR100(root='./data', train=False, download=True, 
                                                     transform=transform_test)
             args.n_classes = 100
-
-            # MSE rescale variables:
-            sqLoss_t = 1
-            sqLoss_M = 10
         else:
-            raise Exception(f'\nInvalid dataset function input: {args.dataset} \
+            raise Exception(f'\nInvalid dataset function input: {dataset_arg} \
                                         \nPlease input a valid dataset as input to the dataset parameter\n')
         return trainset, testset
     
     # Call this function to load final training and testing loaders given train and testing sets
     def load_train_test_loaders(trainset, testset):
-        trainloader = torch.utils.data.DataLoader(trainset, batch_size=args.bs, shuffle=True, num_workers=8)
+        batch_sz = args.bs
+        trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_sz, shuffle=True, num_workers=8)
         testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=False, num_workers=8)
 
         return trainloader, testloader
 
-# previous dataloader
+'''
+Network Factory class
+'''
+class Network_Factory:
+    def load_model(model_name):
+        # Model factory..
+        print('==> Building model..')
 
-# transform_train = transforms.Compose([
-#     transforms.RandomCrop(32, padding=4),
-#     transforms.Resize(args.size),
-#     transforms.RandomHorizontalFlip(),
-#     transforms.ToTensor(),
-#     transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-# ])
+        network_model = None
+        image_sz = args.size
+        n_classes = args.n_classes
 
-# transform_test = transforms.Compose([
-#     transforms.Resize(args.size),
-#     transforms.ToTensor(),
-#     transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-# ])
-
-# if aug:  
-#     N = 2; M = 14;
-#     transform_train.transforms.insert(0, RandAugment(N, M))
-
-# if args.dataset == "cifar10":
-#     trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, 
-#                                             transform=transform_train)
-#     testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, 
-#                                             transform=transform_test)
-
-#     # Change mse rescale variables as needed
-#     sqLoss_t = 1
-#     sqLoss_M = 10
-# elif args.dataset == "mnist":
-#     trainset = torchvision.datasets.MNIST(root='./data', train=True, download=True,
-#                                             transform=transforms.Compose([
-#                                                 transforms.ToTensor(),
-#                                                 transforms.Normalize((0.1307,), (0.3081,)),
-#                                                 ReshapeTransform((1, 784))
-#                                             ]))
-#     testset = torchvision.datasets.MNIST(root='./data', train=False, download=True,
-#                                             transform=transforms.Compose([
-#                                                 transforms.ToTensor(),
-#                                                 transforms.Normalize((0.1307,), (0.3081,)),
-#                                                 ReshapeTransform((1, 784))
-#                                             ]))
-# elif args.dataset == "svhn":
-#     trainset = torchvision.datasets.SVHN(root='./data', split='train', download=True, transform=transform_train)
-#     testset = torchvision.datasets.SVHN(root='./data', split='test', download=True, transform=transform_test)
-# elif args.dataset == "cifar100":
-#     trainset = torchvision.datasets.CIFAR100(root='./data', train=True, download=True, 
-#                                             transform=transforms.Compose([
-#                                                 transforms.RandomCrop(32, padding=4),
-#                                                 transforms.Resize(args.size),
-#                                                 transforms.RandomHorizontalFlip(),
-#                                                 transforms.ToTensor(),
-#                                                 transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-#                                             ]))
-#     testset = torchvision.datasets.CIFAR100(root='./data', train=False, download=True, 
-#                                             transform=transforms.Compose([
-#                                                 transforms.Resize(args.size),
-#                                                 transforms.ToTensor(),
-#                                                 transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-#                                             ]))
-
-#     # Change mse rescale variables as needed
-#     sqLoss_t = 1
-#     sqLoss_M = 10
-#     args.n_classes = 100
-# else:
-#     raise Exception(f'\nInvalid dataset function input: {args.dataset} \
-#                                 \nPlease input a valid dataset as input to the dataset parameter\n')
+        if (model_name == 'res18'):
+            network_model = ResNet18()
+        elif (model_name == 'vgg'):
+            # net used in squentropy paper
+            network_model = torchvision.models.vgg11_bn(weights=None, num_classes=n_classes)
+            # net = VGG('VGG19')
+        elif (model_name=='res34'):
+            network_model = ResNet34()
+        elif (model_name == 'res50'):
+            network_model = ResNet50()
+        elif (model_name == 'res101'):
+            network_model = ResNet101()
+        elif (model_name == 'wide_res'):
+            from models.wide_resnet import WideResNet
+            network_model = WideResNet(num_classes=n_classes)
+        elif (model_name =='tcnn'):
+            # TCNN can currently only be used with MNIST
+            from models.tcnn import TCN
+            # Default hyperparam config from repo
+            hidden_layer_units = 25
+            num_levels = 8
+            
+            network_model = TCN(
+                input_size=1, 
+                output_size=n_classes, 
+                num_channels=[hidden_layer_units]*num_levels,
+                kernel_size=7,
+                dropout=0.05
+            )
+        elif (model_name =="convmixer"):
+            # from paper, accuracy >96%. you can tune the depth and dim to scale accuracy and speed.
+            network_model = ConvMixer(256, 16, kernel_size=args.convkernel, patch_size=1, n_classes=n_classes)
+        elif (model_name =="mlpmixer"):
+            from models.mlpmixer import MLPMixer
+            network_model = MLPMixer(
+                image_size = image_sz,
+                channels = 3,
+                patch_size = args.patch,
+                dim = 512,
+                depth = 6,
+                num_classes = n_classes
+            )
+        elif (model_name == "vit_small"):
+            from models.vit_small import ViT
+            network_model = ViT(
+                image_size = image_sz,
+                patch_size = args.patch,
+                num_classes = n_classes,
+                dim = int(args.dimhead),
+                depth = 6,
+                heads = 8,
+                mlp_dim = 512,
+                dropout = 0.1,
+                emb_dropout = 0.1
+            )
+        elif (model_name =="vit_tiny"):
+            from models.vit_small import ViT
+            network_model = ViT(
+                image_size = image_sz,
+                patch_size = args.patch,
+                num_classes = n_classes,
+                dim = int(args.dimhead),
+                depth = 4,
+                heads = 6,
+                mlp_dim = 256,
+                dropout = 0.1,
+                emb_dropout = 0.1
+            )
+        elif (model_name == "simplevit"):
+            from models.simplevit import SimpleViT
+            network_model = SimpleViT(
+                image_size = image_sz,
+                patch_size = args.patch,
+                num_classes = n_classes,
+                dim = int(args.dimhead),
+                depth = 6,
+                heads = 8,
+                mlp_dim = 512
+            )
+        elif (model_name == "vit"):
+            # ViT initialized for cifar10
+            network_model = ViT(
+                image_size = image_sz,
+                patch_size = args.patch,
+                num_classes = n_classes,
+                dim = int(args.dimhead),
+                depth = 6,
+                heads = 8,
+                mlp_dim = 512,
+                dropout = 0.1,
+                emb_dropout = 0.1
+            )
+        elif (model_name == "vit_timm"):
+            import timm
+            network_model = timm.create_model("vit_base_patch16_384", pretrained=True)
+            network_model.head = nn.Linear(net.head.in_features, 10)
+        elif (model_name == "cait"):
+            from models.cait import CaiT
+            network_model = CaiT(
+                image_size = image_sz,
+                patch_size = args.patch,
+                num_classes = n_classes,
+                dim = int(args.dimhead),
+                depth = 6,   # depth of transformer for patch to patch attention only
+                cls_depth=2, # depth of cross attention of CLS tokens to patch
+                heads = 8,
+                mlp_dim = 512,
+                dropout = 0.1,
+                emb_dropout = 0.1,
+                layer_dropout = 0.05
+            )
+        elif (model_name == "cait_small"):
+            from models.cait import CaiT
+            network_model = CaiT(
+                image_size = image_sz,
+                patch_size = args.patch,
+                num_classes = n_classes,
+                dim = int(args.dimhead),
+                depth = 6,   # depth of transformer for patch to patch attention only
+                cls_depth=2, # depth of cross attention of CLS tokens to patch
+                heads = 6,
+                mlp_dim = 256,
+                dropout = 0.1,
+                emb_dropout = 0.1,
+                layer_dropout = 0.05
+            )
+        elif (model_name == "swin"):
+            from models.swin import swin_t
+            network_model = swin_t(window_size=args.patch,
+                        num_classes=n_classes,
+                        downscaling_factors=(2,2,2,1))
+        
+        return network_model
 
 classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
 
-# Model factory..
-print('==> Building model..')
-if args.net=='res18':
-    net = ResNet18()
-elif args.net=='vgg':
-    # net used in squentropy paper
-    net = torchvision.models.vgg11_bn(weights=None, num_classes=args.n_classes)
-    # net = VGG('VGG19')
-elif args.net=='res34':
-    net = ResNet34()
-elif args.net=='res50':
-    net = ResNet50()
-elif args.net=='res101':
-    net = ResNet101()
-elif args.net=='wide_res':
-    from models.wide_resnet import WideResNet
-    net = WideResNet(num_classes=args.n_classes)
-elif args.net=='tcnn':
-    # TCNN can currently only be used with MNIST
-    from models.tcnn import TCN
-    # Default hyperparam config from repo
-    hidden_layer_units = 25
-    num_levels = 8
-    net = TCN(
-        input_size=1, 
-        output_size=args.n_classes, 
-        num_channels=[hidden_layer_units]*num_levels,
-        kernel_size=7,
-        dropout=0.05
-    )
-elif args.net=="convmixer":
-    # from paper, accuracy >96%. you can tune the depth and dim to scale accuracy and speed.
-    net = ConvMixer(256, 16, kernel_size=args.convkernel, patch_size=1, n_classes=args.n_classes)
-elif args.net=="mlpmixer":
-    from models.mlpmixer import MLPMixer
-    net = MLPMixer(
-        image_size = 32,
-        channels = 3,
-        patch_size = args.patch,
-        dim = 512,
-        depth = 6,
-        num_classes = args.n_classes
-    )
-elif args.net=="vit_small":
-    from models.vit_small import ViT
-    net = ViT(
-        image_size = args.size,
-        patch_size = args.patch,
-        num_classes = args.n_classes,
-        dim = int(args.dimhead),
-        depth = 6,
-        heads = 8,
-        mlp_dim = 512,
-        dropout = 0.1,
-        emb_dropout = 0.1
-    )
-elif args.net=="vit_tiny":
-    from models.vit_small import ViT
-    net = ViT(
-        image_size = args.size,
-        patch_size = args.patch,
-        num_classes = args.n_classes,
-        dim = int(args.dimhead),
-        depth = 4,
-        heads = 6,
-        mlp_dim = 256,
-        dropout = 0.1,
-        emb_dropout = 0.1
-    )
-elif args.net=="simplevit":
-    from models.simplevit import SimpleViT
-    net = SimpleViT(
-        image_size = size,
-        patch_size = args.patch,
-        num_classes = args.n_classes,
-        dim = int(args.dimhead),
-        depth = 6,
-        heads = 8,
-        mlp_dim = 512
-    )
-elif args.net=="vit":
-    # ViT for cifar10
-    net = ViT(
-        image_size = args.size,
-        patch_size = args.patch,
-        num_classes = args.n_classes,
-        dim = int(args.dimhead),
-        depth = 6,
-        heads = 8,
-        mlp_dim = 512,
-        dropout = 0.1,
-        emb_dropout = 0.1
-    )
-elif args.net=="vit_timm":
-    import timm
-    net = timm.create_model("vit_base_patch16_384", pretrained=True)
-    net.head = nn.Linear(net.head.in_features, 10)
-elif args.net=="cait":
-    from models.cait import CaiT
-    net = CaiT(
-    image_size = args.size,
-    patch_size = args.patch,
-    num_classes = args.n_classes,
-    dim = int(args.dimhead),
-    depth = 6,   # depth of transformer for patch to patch attention only
-    cls_depth=2, # depth of cross attention of CLS tokens to patch
-    heads = 8,
-    mlp_dim = 512,
-    dropout = 0.1,
-    emb_dropout = 0.1,
-    layer_dropout = 0.05
-)
-elif args.net=="cait_small":
-    from models.cait import CaiT
-    net = CaiT(
-    image_size = args.size,
-    patch_size = args.patch,
-    num_classes = args.n_classes,
-    dim = int(args.dimhead),
-    depth = 6,   # depth of transformer for patch to patch attention only
-    cls_depth=2, # depth of cross attention of CLS tokens to patch
-    heads = 6,
-    mlp_dim = 256,
-    dropout = 0.1,
-    emb_dropout = 0.1,
-    layer_dropout = 0.05
-)
-elif args.net=="swin":
-    from models.swin import swin_t
-    net = swin_t(window_size=args.patch,
-                num_classes=args.n_classes,
-                downscaling_factors=(2,2,2,1))
-
-# trainloader = torch.utils.data.DataLoader(trainset, batch_size=args.bs, shuffle=True, num_workers=8)
-# testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=False, num_workers=8)
-
 trainset, testset = Dataloader.load_train_test_sets(args.dataset)
 trainloader, testloader = Dataloader.load_train_test_loaders(trainset, testset)
+
+model_name = args.net
+net = Network_Factory.load_model(model_name)
 
 # For viewing data (debugging purposes):
 # train_data_iter = iter(trainloader)
@@ -440,9 +382,6 @@ if args.resume:
     best_acc = checkpoint['acc']
     start_epoch = checkpoint['epoch']
 
-# TODO: Change into squentropy function
-criterion = nn.CrossEntropyLoss()
-
 if args.opt == "adam":
     optimizer = optim.Adam(net.parameters(), lr=args.lr)
 elif args.opt == "sgd":
@@ -450,65 +389,6 @@ elif args.opt == "sgd":
     
 # use cosine scheduling
 scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, args.n_epochs)
-
-# Calculating ECE
-class _ECELoss(nn.Module):
-
-    def __init__(self, n_bins=10):
-        """
-        n_bins (int): number of confidence interval bins
-        """
-        super(_ECELoss, self).__init__()
-        bin_boundaries = torch.linspace(0, 1, n_bins + 1)
-        self.bin_lowers = bin_boundaries[:-1]
-        self.bin_uppers = bin_boundaries[1:]
-
-    def forward(self, logits, labels):
-        softmaxes = F.softmax(logits, dim=1)
-        confidences, predictions = torch.max(softmaxes, 1)
-        accuracies = predictions.eq(labels)
-        ece = torch.zeros(1, device=logits.device)
-
-        for bin_lower, bin_upper in zip(self.bin_lowers, self.bin_uppers):
-            # Calculated |confidence - accuracy| in each bin
-            in_bin = confidences.gt(bin_lower.item()) * confidences.le(bin_upper.item())
-            prop_in_bin = in_bin.float().mean()
-            if prop_in_bin.item() > 0:
-                accuracy_in_bin = accuracies[in_bin].float().mean()
-                avg_confidence_in_bin = confidences[in_bin].mean()
-                # print('bin_lower=%f, bin_upper=%f, accuracy=%.4f, confidence=%.4f: ' % (bin_lower, bin_upper, accuracy_in_bin.item(),
-                #       avg_confidence_in_bin.item()))
-                ece += torch.abs(avg_confidence_in_bin - accuracy_in_bin) * prop_in_bin
-        print('ece = ', ece)
-        return ece
-
-# Squentropy function
-# look up how the bins were split
-def squentropy(outputs, targets):
-    num_classes = args.n_classes
-
-    # one-hot encoding of target
-    target_final = torch.zeros([targets.size()[0], num_classes], device=device).scatter_(1, targets.reshape(
-        targets.size()[0], 1), 1)
-
-    # ce_func = nn.CrossEntropyLoss().cuda()
-    ce_func = nn.CrossEntropyLoss()
-    loss = (torch.sum(outputs ** 2) - torch.sum((outputs[target_final == 1]) ** 2)) / (
-                num_classes - 1) / target_final.size()[0] \
-            + ce_func(outputs, targets)
-    return loss
-
-# mse function
-def mean_square(outputs, targets):
-    num_classes = args.n_classes
-
-    # one-hot encoding of target
-    target_final = torch.zeros([targets.size()[0], num_classes], device=device).scatter_(1, targets.reshape(
-        targets.size()[0], 1), 1)
-    mse_weights = target_final * sqLoss_t + 1
-    
-    loss = torch.mean((outputs - sqLoss_M * target_final.type(torch.float)) ** 2 * mse_weights)
-    return loss
 
 ##### Training
 scaler = torch.cuda.amp.GradScaler(enabled=use_amp)
@@ -525,11 +405,11 @@ def train(epoch):
         with torch.cuda.amp.autocast(enabled=use_amp):
             outputs = net(inputs)
             if (args.loss_eq == 'sqen'):
-                loss = squentropy(outputs, targets)
+                loss = Loss_Functions.squentropy(outputs, targets)
             elif (args.loss_eq == 'cross'):
-                loss = criterion(outputs, targets)
+                loss = Loss_Functions.cross_entropy(outputs, targets)
             elif (args.loss_eq == 'mse'):
-                loss = mean_square(outputs, targets)
+                loss = Loss_Functions.rescaled_mse(outputs, targets)
             else:
                 raise Exception(f'\nInvalid loss function input: {args.loss_eq} \
                                 \nPlease input \'sqen\', \'cross\', or \'mse\' as inputs to the loss_eq parameter\n')
@@ -549,10 +429,6 @@ def train(epoch):
 
 ##### Validation
 def test(epoch):
-    global best_acc
-    global min_ece
-    global max_ece
-    global sum_ece
     net.eval()
     test_loss = 0
     correct = 0
@@ -570,11 +446,11 @@ def test(epoch):
 
             # determining loss function
             if (args.loss_eq == 'sqen'):
-                loss = squentropy(outputs, targets)
+                loss = Loss_Functions.squentropy(outputs, targets)
             elif (args.loss_eq == 'cross'):
-                loss = criterion(outputs, targets)
+                loss = Loss_Functions.cross_entropy(outputs, targets)
             elif (args.loss_eq == 'mse'):
-                loss = mean_square(outputs, targets)
+                loss = Loss_Functions.rescaled_mse(outputs, targets)
             else:
                 raise Exception(f'\nInvalid loss function input: {args.loss_eq} \
                                 \nPlease input \'sqen\', \'cross\', or \'mse\' as inputs to the loss_eq parameter\n')
@@ -615,9 +491,6 @@ def test(epoch):
         appender.write(content + "\n")
     return test_loss/(num_testdata), acc, ece
 
-list_loss = []
-list_acc = []
-
 if usewandb:
     wandb.watch(net)
     
@@ -625,6 +498,9 @@ net.cuda()
 global_start_time = time.time()
 
 # tracking ECE min, max, avg
+list_loss = []
+list_acc = []
+
 ece_sum = 0
 ece_max = 0
 ece_min = 100

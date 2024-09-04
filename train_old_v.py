@@ -525,3 +525,74 @@ for epoch in range(start_epoch, args.n_epochs):
 if usewandb:
     wandb.save("wandb_{}.h5".format(args.net))
     
+# previous dataloader
+
+# transform_train = transforms.Compose([
+#     transforms.RandomCrop(32, padding=4),
+#     transforms.Resize(args.size),
+#     transforms.RandomHorizontalFlip(),
+#     transforms.ToTensor(),
+#     transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+# ])
+
+# transform_test = transforms.Compose([
+#     transforms.Resize(args.size),
+#     transforms.ToTensor(),
+#     transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+# ])
+
+# if aug:  
+#     N = 2; M = 14;
+#     transform_train.transforms.insert(0, RandAugment(N, M))
+
+# if args.dataset == "cifar10":
+#     trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, 
+#                                             transform=transform_train)
+#     testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, 
+#                                             transform=transform_test)
+
+#     # Change mse rescale variables as needed
+#     sqLoss_t = 1
+#     sqLoss_M = 10
+# elif args.dataset == "mnist":
+#     trainset = torchvision.datasets.MNIST(root='./data', train=True, download=True,
+#                                             transform=transforms.Compose([
+#                                                 transforms.ToTensor(),
+#                                                 transforms.Normalize((0.1307,), (0.3081,)),
+#                                                 ReshapeTransform((1, 784))
+#                                             ]))
+#     testset = torchvision.datasets.MNIST(root='./data', train=False, download=True,
+#                                             transform=transforms.Compose([
+#                                                 transforms.ToTensor(),
+#                                                 transforms.Normalize((0.1307,), (0.3081,)),
+#                                                 ReshapeTransform((1, 784))
+#                                             ]))
+# elif args.dataset == "svhn":
+#     trainset = torchvision.datasets.SVHN(root='./data', split='train', download=True, transform=transform_train)
+#     testset = torchvision.datasets.SVHN(root='./data', split='test', download=True, transform=transform_test)
+# elif args.dataset == "cifar100":
+#     trainset = torchvision.datasets.CIFAR100(root='./data', train=True, download=True, 
+#                                             transform=transforms.Compose([
+#                                                 transforms.RandomCrop(32, padding=4),
+#                                                 transforms.Resize(args.size),
+#                                                 transforms.RandomHorizontalFlip(),
+#                                                 transforms.ToTensor(),
+#                                                 transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+#                                             ]))
+#     testset = torchvision.datasets.CIFAR100(root='./data', train=False, download=True, 
+#                                             transform=transforms.Compose([
+#                                                 transforms.Resize(args.size),
+#                                                 transforms.ToTensor(),
+#                                                 transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+#                                             ]))
+
+#     # Change mse rescale variables as needed
+#     sqLoss_t = 1
+#     sqLoss_M = 10
+#     args.n_classes = 100
+# else:
+#     raise Exception(f'\nInvalid dataset function input: {args.dataset} \
+#                                 \nPlease input a valid dataset as input to the dataset parameter\n')
+#
+# trainloader = torch.utils.data.DataLoader(trainset, batch_size=args.bs, shuffle=True, num_workers=8)
+# testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=False, num_workers=8)
