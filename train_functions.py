@@ -15,7 +15,7 @@ class Loss_Functions:
         # For Rescaled Squentropy variables
         self.sqen_alpha = 1
 
-        if (dataset == 'cifar10') or (dataset == 'ciffar100'):
+        if (dataset == 'cifar10') or (dataset == 'cifar100'):
             self.sqLoss_M = 10
 
     '''
@@ -23,10 +23,9 @@ class Loss_Functions:
     '''
     def squentropy(self, outputs, targets):
         num_classes = self.num_classes
-        used_device = self.device
 
         # one-hot encoding of target
-        target_final = torch.zeros([targets.size()[0], num_classes], device=used_device).scatter_(1, targets.reshape(
+        target_final = torch.zeros([targets.size()[0], num_classes], device=self.device).scatter_(1, targets.reshape(
             targets.size()[0], 1), 1)
 
         # ce_func = nn.CrossEntropyLoss().cuda()
@@ -41,11 +40,11 @@ class Loss_Functions:
         num_classes = self.num_classes
 
         # one-hot encoding of target
-        target_final = torch.zeros([targets.size()[0], num_classes], device=device).scatter_(1, targets.reshape(
+        target_final = torch.zeros([targets.size()[0], num_classes], device=self.device).scatter_(1, targets.reshape(
             targets.size()[0], 1), 1)
-        mse_weights = target_final * sqLoss_t + 1
+        mse_weights = target_final * self.sqLoss_t + 1
         
-        loss = torch.mean((outputs - sqLoss_M * target_final.type(torch.float)) ** 2 * mse_weights)
+        loss = torch.mean((outputs - self.sqLoss_M * target_final.type(torch.float)) ** 2 * mse_weights)
         return loss
 
     # Default Cross Entropy given by Pytorch
