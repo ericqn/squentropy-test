@@ -296,6 +296,7 @@ class Network_Factory:
                 mlp_dim = 512
             )
         elif (model_name == "vit"):
+            from models.vit import ViT
             # ViT initialized for cifar10
             network_model = ViT(
                 image_size = image_sz,
