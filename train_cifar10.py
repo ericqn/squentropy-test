@@ -148,6 +148,8 @@ class Dataloader:
                 transforms.Normalize((0.1307,), (0.3081,)),
                 ReshapeTransform((1, 784))
             ])
+
+            # args.bs = 64
         else:
             raise Exception(f'\nInvalid dataset function input: {dataset_arg} \
                                         \nPlease input a valid dataset as input to the dataset parameter\n')
