@@ -161,7 +161,12 @@ class Dataloader:
         # Add RandAugment with N, M(hyperparameter)
         if aug:  
             N = 2; M = 14;
-            transform_train.transforms.insert(0, RandAugment(N, M))
+            if dataset_arg == "mnist":
+                grayscale = True
+            else:
+                grayscale = False
+            
+            transform_train.transforms.insert(0, RandAugment(N, M, grayscale))
 
         return transform_train, transform_test
     

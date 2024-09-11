@@ -139,8 +139,30 @@ def CutoutAbs(img, v):  # [0, 60] => percentage: [0, 0.2]
 
     xy = (x0, y0, x1, y1)
     color = (125, 123, 114)
-    # color = (0, 0, 0)
     img = img.copy()
+
+    # Color tuple does not work for grayscale images (MNIST dataset)
+    PIL.ImageDraw.Draw(img).rectangle(xy, color)
+    return img
+
+def GrayscaleCutoutAbs(img, v):  # [0, 60] => percentage: [0, 0.2]
+    # assert 0 <= v <= 20
+    if v < 0:
+        return img
+    w, h = img.size
+    x0 = np.random.uniform(w)
+    y0 = np.random.uniform(h)
+
+    x0 = int(max(0, x0 - v / 2.))
+    y0 = int(max(0, y0 - v / 2.))
+    x1 = min(w, x0 + v)
+    y1 = min(h, y0 + v)
+
+    xy = (x0, y0, x1, y1)
+    color = 125
+    img = img.copy()
+
+    # Color tuple does not work for grayscale images (MNIST dataset)
     PIL.ImageDraw.Draw(img).rectangle(xy, color)
     return img
 
@@ -158,7 +180,7 @@ def Identity(img, v):
     return img
 
 
-def augment_list():  # 16 oeprations and their ranges
+def augment_list(grayscale):  # 16 operations and their ranges
     # https://github.com/google-research/uda/blob/master/image/randaugment/policies.py#L57
     # l = [
     #     (Identity, 0., 1.0),
@@ -180,25 +202,46 @@ def augment_list():  # 16 oeprations and their ranges
     #     # (SamplePairing(imgs), 0, 0.4),  # 15
     # ]
 
-    # https://github.com/tensorflow/tpu/blob/8462d083dd89489a79e3200bcc8d4063bf362186/models/official/efficientnet/autoaugment.py#L505
-    l = [
-        (AutoContrast, 0, 1),
-        (Equalize, 0, 1),
-        (Invert, 0, 1),
-        (Rotate, 0, 30),
-        (Posterize, 0, 4),
-        (Solarize, 0, 256),
-        (SolarizeAdd, 0, 110),
-        (Color, 0.1, 1.9),
-        (Contrast, 0.1, 1.9),
-        (Brightness, 0.1, 1.9),
-        (Sharpness, 0.1, 1.9),
-        (ShearX, 0., 0.3),
-        (ShearY, 0., 0.3),
-        (CutoutAbs, 0, 40),
-        (TranslateXabs, 0., 100),
-        (TranslateYabs, 0., 100),
-    ]
+    if grayscale:
+        # https://github.com/tensorflow/tpu/blob/8462d083dd89489a79e3200bcc8d4063bf362186/models/official/efficientnet/autoaugment.py#L505
+        l = [
+            (AutoContrast, 0, 1),
+            (Equalize, 0, 1),
+            (Invert, 0, 1),
+            (Rotate, 0, 30),
+            (Posterize, 0, 4),
+            (Solarize, 0, 256),
+            (SolarizeAdd, 0, 110),
+            (Color, 0.1, 1.9),
+            (Contrast, 0.1, 1.9),
+            (Brightness, 0.1, 1.9),
+            (Sharpness, 0.1, 1.9),
+            (ShearX, 0., 0.3),
+            (ShearY, 0., 0.3),
+            (GrayscaleCutoutAbs, 0, 40),
+            (TranslateXabs, 0., 100),
+            (TranslateYabs, 0., 100),
+        ]
+    else:
+        # https://github.com/tensorflow/tpu/blob/8462d083dd89489a79e3200bcc8d4063bf362186/models/official/efficientnet/autoaugment.py#L505
+        l = [
+            (AutoContrast, 0, 1),
+            (Equalize, 0, 1),
+            (Invert, 0, 1),
+            (Rotate, 0, 30),
+            (Posterize, 0, 4),
+            (Solarize, 0, 256),
+            (SolarizeAdd, 0, 110),
+            (Color, 0.1, 1.9),
+            (Contrast, 0.1, 1.9),
+            (Brightness, 0.1, 1.9),
+            (Sharpness, 0.1, 1.9),
+            (ShearX, 0., 0.3),
+            (ShearY, 0., 0.3),
+            (CutoutAbs, 0, 40),
+            (TranslateXabs, 0., 100),
+            (TranslateYabs, 0., 100),
+        ]
 
     return l
 
@@ -250,10 +293,10 @@ class CutoutDefault(object):
 
 
 class RandAugment:
-    def __init__(self, n, m):
+    def __init__(self, n, m, grayscale):
         self.n = n
         self.m = m      # [0, 30]
-        self.augment_list = augment_list()
+        self.augment_list = augment_list(grayscale)
 
     def __call__(self, img):
         ops = random.choices(self.augment_list, k=self.n)
