@@ -161,6 +161,7 @@ class Dataloader:
         # Add RandAugment with N, M(hyperparameter)
         if aug:  
             N = 2; M = 14;
+            
             if dataset_arg == "mnist":
                 grayscale = True
             else:
@@ -183,6 +184,7 @@ class Dataloader:
             testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, 
                                                     transform=transform_test)
         elif dataset_arg == "mnist":
+            
             trainset = torchvision.datasets.MNIST(root='./data', train=True, download=True,
                                                     transform=transform_train)
             testset = torchvision.datasets.MNIST(root='./data', train=False, download=True,
@@ -239,7 +241,6 @@ class Network_Factory:
             from models.wide_resnet import WideResNet
             network_model = WideResNet(num_classes=n_classes)
         elif (model_name =='tcnn'):
-            # TCNN can currently only be used with MNIST
             from models.tcnn import TCN
             # Default hyperparam config from repo
             hidden_layer_units = 25
@@ -367,6 +368,7 @@ model_name = args.net
 net = Network_Factory.load_model(model_name)
 
 # For viewing data (debugging purposes):
+
 # train_data_iter = iter(trainloader)
 # test_data_iter = iter(testloader)
 # train_image, train_label = next(train_data_iter)

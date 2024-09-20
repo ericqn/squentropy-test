@@ -180,7 +180,7 @@ def Identity(img, v):
     return img
 
 
-def augment_list(grayscale):  # 16 operations and their ranges
+def augment_list(img_is_grayscale):  # 16 operations and their ranges
     # https://github.com/google-research/uda/blob/master/image/randaugment/policies.py#L57
     # l = [
     #     (Identity, 0., 1.0),
@@ -202,7 +202,7 @@ def augment_list(grayscale):  # 16 operations and their ranges
     #     # (SamplePairing(imgs), 0, 0.4),  # 15
     # ]
 
-    if grayscale:
+    if img_is_grayscale:
         # https://github.com/tensorflow/tpu/blob/8462d083dd89489a79e3200bcc8d4063bf362186/models/official/efficientnet/autoaugment.py#L505
         l = [
             (AutoContrast, 0, 1),
@@ -293,10 +293,10 @@ class CutoutDefault(object):
 
 
 class RandAugment:
-    def __init__(self, n, m, grayscale):
+    def __init__(self, n, m, img_is_grayscale):
         self.n = n
         self.m = m      # [0, 30]
-        self.augment_list = augment_list(grayscale)
+        self.augment_list = augment_list(img_is_grayscale)
 
     def __call__(self, img):
         ops = random.choices(self.augment_list, k=self.n)
