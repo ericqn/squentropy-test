@@ -8,11 +8,15 @@ Using the repository is straightforward - all you need to do is run the `train_c
 
 ### Updates
 Additions made by @ericqn
-* Added Wide Resnet (2024/8)
+* Cleaned up codebase by separating loss functions + ECE metric into different class file (2024/9)
 
-* Added Temporal CNN (2024/8)
+* Added Wide Resnet model and CIFAR-100 dataset (2024/8)
 
-* Added MNIST, SVHN, 
+* Added Temporal CNN model (2024/8)
+
+* Added bash script (slurm.sh) to run on remote GPU servers -- Illinois Delta GPU (2024/7)
+
+* Added MNIST, SVHN datasets (2024/6)
 ---
 * Added [ConvMixer]((https://openreview.net/forum?id=TVHS5Y4dNvM)) implementation. Really simple! (2021/10)
 
