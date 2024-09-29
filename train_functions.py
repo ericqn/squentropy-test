@@ -34,6 +34,41 @@ class Loss_Functions:
                     num_classes - 1) / target_final.size()[0] \
                 + ce_func(outputs, targets)
         return loss
+    
+    '''
+    Rescalable squentropy function
+    Set rescale factor to 1 for original squentropy function and 0 for cross-entropy function
+    '''
+    def rescaled_squentropy(self, outputs, targets, rescale_factor):
+        num_classes = self.num_classes
+
+        # one-hot encoding of target
+        target_final = torch.zeros([targets.size()[0], num_classes], device=self.device).scatter_(1, targets.reshape(
+            targets.size()[0], 1), 1)
+
+        # ce_func = nn.CrossEntropyLoss().cuda()
+        ce_func = nn.CrossEntropyLoss()
+        loss = rescale_factor * (torch.sum(outputs ** 2) - torch.sum((outputs[target_final == 1]) ** 2)) / (
+                    num_classes - 1) / target_final.size()[0] \
+                + ce_func(outputs, targets)
+        return loss
+    
+    '''
+    Rescaled squentropy function with incorrect classes set to -1 instead of 0 in one hot encoding
+    '''
+    def rescaled_negative_squentropy(self, outputs, targets, rescale_factor):
+        num_classes = self.num_classes
+
+        # one-hot encoding of target
+        target_final = torch.full([targets.size()[0], num_classes], -1, device=self.device).scatter_(1, targets.reshape(
+            targets.size()[0], 1), 1)
+
+        # ce_func = nn.CrossEntropyLoss().cuda()
+        ce_func = nn.CrossEntropyLoss()
+        loss = rescale_factor * (torch.sum(outputs ** 2) - torch.sum((outputs[target_final == 1]) ** 2)) / (
+                    num_classes - 1) / target_final.size()[0] \
+                + ce_func(outputs, targets)
+        return loss
 
     # Rescaled Mean Square Error function
     def rescaled_mse(self, outputs, targets):

@@ -420,11 +420,18 @@ def train(epoch):
         with torch.cuda.amp.autocast(enabled=use_amp):
             outputs = net(inputs)
             if (args.loss_eq == 'sqen'):
+                alpha = 1
                 loss = loss_func.squentropy(outputs, targets)
             elif (args.loss_eq == 'cross'):
                 loss = loss_func.cross_entropy(outputs, targets)
             elif (args.loss_eq == 'mse'):
                 loss = loss_func.rescaled_mse(outputs, targets)
+            elif(args.loss_eq == 'sqen_rs'):
+                alpha = 0.1
+                loss = loss_func.rescaled_squentropy(outputs, targets, alpha)
+            elif(args.loss_eq == 'sqen_neg_rs'):
+                alpha = 1
+                loss = loss_func.rescaled_negative_squentropy(outputs, targets, alpha)
             else:
                 raise Exception(f'\nInvalid loss function input: {args.loss_eq} \
                                 \nPlease input \'sqen\', \'cross\', or \'mse\' as inputs to the loss_eq parameter\n')
