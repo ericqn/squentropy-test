@@ -58,6 +58,7 @@ parser.add_argument('--convkernel', default='8', type=int, help="parameter for c
 parser.add_argument('--loss_eq', default='sqen')
 parser.add_argument('--dataset', default='cifar10')
 parser.add_argument('--subset_prop', default='-1', type=float, help='sets the proportion of the training subset to be used')
+parser.add_argument('--sqen_alpha', default='-1', type=float, help='set rescale value for squentropy loss function')
 
 args = parser.parse_args()
 
@@ -209,7 +210,7 @@ class Dataloader:
             train_subset_size = int(args.subset_prop * len(trainset))
             test_subset_size = int(args.subset_prop * len(testset))
 
-            if (train_subset_size < 2) or (test_subset_size < 2):
+            if (train_subset_size < 30) or (test_subset_size < 10):
                 raise Exception(f'\nSubset proportion of {args.subset_prop} is too small.')
 
             training_indices = np.random.choice(len(trainset), train_subset_size, replace=False)
@@ -434,17 +435,17 @@ def train(epoch):
         with torch.cuda.amp.autocast(enabled=use_amp):
             outputs = net(inputs)
             if (args.loss_eq == 'sqen'):
-                alpha = 1
+                alpha = args.sqen_alpha
                 loss = loss_func.squentropy(outputs, targets)
             elif (args.loss_eq == 'cross'):
                 loss = loss_func.cross_entropy(outputs, targets)
             elif (args.loss_eq == 'mse'):
                 loss = loss_func.rescaled_mse(outputs, targets)
             elif(args.loss_eq == 'sqen_rs'):
-                alpha = 0.1
+                alpha = 
                 loss = loss_func.rescaled_squentropy(outputs, targets, alpha)
             elif(args.loss_eq == 'sqen_neg_rs'):
-                alpha = 1
+                alpha = args.sqen_alpha
                 loss = loss_func.rescaled_negative_squentropy(outputs, targets, alpha)
             else:
                 raise Exception(f'\nInvalid loss function input: {args.loss_eq} \
