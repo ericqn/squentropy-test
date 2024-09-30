@@ -21,7 +21,7 @@ conda activate belkin
 # Ensure the conda environment is activated properly
 echo “Activated conda environment: $(conda info --envs | grep ‘*’ | awk ‘{print $1}’)”
 # Run the training script
-python /u/enguyen3/squentropy-test/train_cifar10.py --dataset cifar10 --net res18 --n_epochs 200 --loss_eq sqen --lr 0.02
-python /u/enguyen3/squentropy-test/train_cifar10.py --dataset cifar10 --net res18 --n_epochs 200 --loss_eq mse --lr 0.02
-python /u/enguyen3/squentropy-test/train_cifar10.py --dataset cifar10 --net res18 --n_epochs 200 --loss_eq cross --lr 0.02
+python /u/enguyen3/squentropy-test/train_cifar10.py --dataset cifar10 --net vit --subset_prop 0.001 --n_epochs 200 --loss_eq sqen_neg_rs --lr 0.0002
+python /u/enguyen3/squentropy-test/train_cifar10.py --dataset cifar10 --net vit --subset_prop 0.001 --n_epochs 200 --loss_eq sqen_neg --lr 0.0002
+# python /u/enguyen3/squentropy-test/train_cifar10.py --dataset cifar10 --net res18 --n_epochs 200 --loss_eq cross --lr 0.02
 # python /u/enguyen3/squentropy-test/train_old_v.py --dataset svhn --net vgg --n_epochs 200 --loss_eq sqen --lr 0.02

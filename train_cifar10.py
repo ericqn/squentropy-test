@@ -14,12 +14,12 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 import torch.backends.cudnn as cudnn
+from torch.utils.data import Subset
 import numpy as np
 
 import torchvision
 import torchvision.transforms as transforms
 from torchvision.transforms import v2
-
 
 import os
 import argparse
@@ -57,6 +57,7 @@ parser.add_argument('--dimhead', default="512", type=int)
 parser.add_argument('--convkernel', default='8', type=int, help="parameter for convmixer")
 parser.add_argument('--loss_eq', default='sqen')
 parser.add_argument('--dataset', default='cifar10')
+parser.add_argument('--subset_prop', default='-1', type=int, help='sets the proportion of the training subset to be used')
 
 args = parser.parse_args()
 
@@ -65,7 +66,7 @@ usewandb = not (args.nowandb)
 if usewandb:
     import wandb
     watermark = "{}_model:{}_loss:{}_lr:{}".format(args.dataset, args.net, args.loss_eq, args.lr)
-    wandb.init(project="Squentropy Testing 2",
+    wandb.init(project="Squentropy Testing 3 - rescalable",
             name=watermark)
     wandb.config.update(args)
 
@@ -203,6 +204,16 @@ class Dataloader:
         else:
             raise Exception(f'\nInvalid dataset function input: {dataset_arg} \
                                         \nPlease input a valid dataset as input to the dataset parameter\n')
+        
+        if (args.subset_sz > -1):
+            train_subset_size = int(args.subset_prop * len(trainset))
+            test_subset_size = int(args.subset_prop * len(testset))
+
+            training_indices = np.random.choice(len(trainset), train_subset_size, replace=False)
+            trainset = Subset(trainset, training_indices)
+            testing_indices = np.random.choice(len(testset), test_subset_size, replace=False)
+            testset = Subset(testset, testing_indices)
+
         return trainset, testset
     
     # Call this function to load final training and testing loaders given train and testing sets
