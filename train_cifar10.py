@@ -209,6 +209,9 @@ class Dataloader:
             train_subset_size = int(args.subset_prop * len(trainset))
             test_subset_size = int(args.subset_prop * len(testset))
 
+            if (train_subset_size < 2) or (test_subset_size < 2):
+                raise Exception(f'\nSubset proportion of {args.subset_prop} is too small.')
+
             training_indices = np.random.choice(len(trainset), train_subset_size, replace=False)
             trainset = Subset(trainset, training_indices)
             testing_indices = np.random.choice(len(testset), test_subset_size, replace=False)
