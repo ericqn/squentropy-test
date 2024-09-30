@@ -65,13 +65,14 @@ args = parser.parse_args()
 # take in args
 usewandb = not (args.nowandb)
 use_sqen_rs = False
+
 if (args.sqen_alpha > -1) and ((args.loss_eq == 'sqen_rs') or (args.loss_eq == 'sqen_neg_rs')):
     use_sqen_rs = True
 if usewandb:
     import wandb
     watermark = "{}_model:{}_loss:{}_lr:{}".format(args.dataset, args.net, args.loss_eq, args.lr)
     if (use_sqen_rs):
-        watermark = f"{args.dataset}_model:{args.net}_loss:{args.loss_eq}_alpha:{args.sqen_alpha}_lr:{}"
+        watermark = f"{args.dataset}_model:{args.net}_loss:{args.loss_eq}_alpha:{args.sqen_alpha}_lr:{args.lr}"
     wandb.init(project="Squentropy Testing 3 - rescalable",
             name=watermark)
     wandb.config.update(args)
