@@ -387,6 +387,7 @@ trainloader, testloader = Dataloader.load_train_test_loaders(trainset, testset)
 
 model_name = args.net
 net = Network_Factory.load_model(model_name)
+net.register_parameter("rescale_factor", nn.Parameter(torch.tensor(1.0, device=device)))
 
 # For viewing data (debugging purposes):
 
@@ -414,9 +415,9 @@ if args.resume:
     start_epoch = checkpoint['epoch']
 
 if args.opt == "adam":
-    optimizer = optim.Adam(net.parameters(), lr=args.lr)
+    optimizer = optim.Adam(net.parameters() + [net.rescale_factor], lr=args.lr)
 elif args.opt == "sgd":
-    optimizer = optim.SGD(net.parameters(), lr=args.lr)  
+    optimizer = optim.SGD(net.parameters() + [net.rescale_factor], lr=args.lr)  
     
 # use cosine scheduling
 scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, args.n_epochs)
@@ -448,7 +449,12 @@ def train(epoch):
             elif (args.loss_eq == 'mse'):
                 loss = loss_func.rescaled_mse(outputs, targets)
             elif(args.loss_eq == 'sqen_rs'):
-                alpha = args.sqen_alpha
+                # alpha = args.sqen_alpha
+                alpha = net.rescale_factor.item()
+
+                # Debugging:
+                print(f'\n TRAINING ALPHA for {epoch} = {alpha} \n')
+
                 loss = loss_func.rescaled_squentropy(outputs, targets, alpha)
             elif(args.loss_eq == 'sqen_neg_rs'):
                 alpha = args.sqen_alpha
@@ -502,7 +508,12 @@ def test(epoch):
             elif (args.loss_eq == 'mse'):
                 loss = loss_func.rescaled_mse(outputs, targets)
             elif(args.loss_eq == 'sqen_rs'):
-                alpha = 0.1
+                # alpha = 0.1
+                alpha = net.rescale_factor.item()
+
+                # Debugging:
+                print(f'\n TESTING ALPHA for {epoch} = {alpha} \n')
+                
                 loss = loss_func.rescaled_squentropy(outputs, targets, alpha)
             elif(args.loss_eq == 'sqen_neg_rs'):
                 alpha = 1
