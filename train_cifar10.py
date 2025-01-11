@@ -33,7 +33,7 @@ from models.convmixer import ConvMixer
 
 from utils import progress_bar
 from randomaug import RandAugment
-from train_functions import _ECELoss, Loss_Functions
+from train_functions import _ECELoss, Squentropy, Rescaled_MSE
 
 import ipdb
 
@@ -424,12 +424,12 @@ scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, args.n_epochs)
 scaler = torch.cuda.amp.GradScaler(enabled=use_amp)
 
 ##### Training
-def train(epoch):
+def train(epoch, loss_func):
     net.train()
 
-    n_classes = args.n_classes
-    dataset = args.dataset
-    loss_func = Loss_Functions(device=device, num_classes=n_classes, dataset=dataset)
+    # n_classes = args.n_classes
+    # dataset = args.dataset
+    # loss_func = Loss_Functions(device=device, num_classes=n_classes, dataset=dataset)
 
     train_loss = 0
     correct = 0
@@ -441,27 +441,29 @@ def train(epoch):
         # Train with amp
         with torch.cuda.amp.autocast(enabled=use_amp):
             outputs = net(inputs)
-            if (args.loss_eq == 'sqen'):
-                alpha = args.sqen_alpha
-                loss = loss_func.squentropy(outputs, targets)
-            elif (args.loss_eq == 'cross'):
-                loss = loss_func.cross_entropy(outputs, targets)
-            elif (args.loss_eq == 'mse'):
-                loss = loss_func.rescaled_mse(outputs, targets)
-            elif(args.loss_eq == 'sqen_rs'):
-                # alpha = args.sqen_alpha
-                alpha = net.rescale_factor.item()
+            loss = loss_func(outputs, targets)
+            # if (args.loss_eq == 'sqen'):
+            #     alpha = args.sqen_alpha
+            #     loss = loss_func.squentropy(outputs, targets)
+            # elif (args.loss_eq == 'cross'):
+            #     loss = loss_func.cross_entropy(outputs, targets)
+            # elif (args.loss_eq == 'mse'):
+            #     loss = loss_func.rescaled_mse(outputs, targets)
+            # elif(args.loss_eq == 'sqen_rs'):
+            #     # alpha = args.sqen_alpha
+            #     alpha = net.rescale_factor.item()
 
-                # Debugging:
-                print(f'\n TRAINING ALPHA for {epoch} = {alpha} \n')
+            #     # Debugging:
+            #     print(f'\n TRAINING ALPHA for {epoch} = {alpha} \n')
 
-                loss = loss_func.rescaled_squentropy(outputs, targets, alpha)
-            elif(args.loss_eq == 'sqen_neg_rs'):
-                alpha = args.sqen_alpha
-                loss = loss_func.rescaled_negative_squentropy(outputs, targets, alpha)
-            else:
-                raise Exception(f'\nInvalid loss function input: {args.loss_eq} \
-                                \nPlease input \'sqen\', \'cross\', or \'mse\' as inputs to the loss_eq parameter\n')
+            #     loss = loss_func.rescaled_squentropy(outputs, targets, alpha)
+            # elif(args.loss_eq == 'sqen_neg_rs'):
+            #     alpha = args.sqen_alpha
+            #     loss = loss_func.rescaled_negative_squentropy(outputs, targets, alpha)
+            # else:
+            #     raise Exception(f'\nInvalid loss function input: {args.loss_eq} \
+            #                     \nPlease input \'sqen\', \'cross\', or \'mse\' as inputs to the loss_eq parameter\n')
+            
         scaler.scale(loss).backward()
         scaler.step(optimizer)
         scaler.update()
@@ -477,12 +479,12 @@ def train(epoch):
     return train_loss/(batch_idx+1)
 
 ##### Validation
-def test(epoch):
+def test(epoch, loss_func):
     net.eval()
 
-    n_classes = args.n_classes
-    dataset = args.dataset
-    loss_func = Loss_Functions(device=device, num_classes=n_classes, dataset=dataset)
+    # n_classes = args.n_classes
+    # dataset = args.dataset
+    # loss_func = Loss_Functions(device=device, num_classes=n_classes, dataset=dataset)
     ece_func = _ECELoss()
 
     global best_acc
@@ -500,27 +502,7 @@ def test(epoch):
 
             outputs = net(inputs)
 
-            # determining loss function
-            if (args.loss_eq == 'sqen'):
-                loss = loss_func.squentropy(outputs, targets)
-            elif (args.loss_eq == 'cross'):
-                loss = loss_func.cross_entropy(outputs, targets)
-            elif (args.loss_eq == 'mse'):
-                loss = loss_func.rescaled_mse(outputs, targets)
-            elif(args.loss_eq == 'sqen_rs'):
-                # alpha = 0.1
-                alpha = net.rescale_factor.item()
-
-                # Debugging:
-                print(f'\n TESTING ALPHA for {epoch} = {alpha} \n')
-                
-                loss = loss_func.rescaled_squentropy(outputs, targets, alpha)
-            elif(args.loss_eq == 'sqen_neg_rs'):
-                alpha = 1
-                loss = loss_func.rescaled_negative_squentropy(outputs, targets, alpha)
-            else:
-                raise Exception(f'\nInvalid loss function input: {args.loss_eq} \
-                                \nPlease input \'sqen\', \'cross\', or \'mse\' as inputs to the loss_eq parameter\n')
+            loss = loss_func(outputs, targets)
 
             logits_list.append(outputs)
             labels_list.append(targets)
@@ -573,11 +555,28 @@ ece_max = 0
 ece_min = 100
 eval_acc_max = 0
 
+loss_func = None
+if (args.loss_eq == 'sqen'):
+    loss_func = Squentropy(device=device, num_classes=args.n_classes)
+elif (args.loss_eq == 'cross'):
+    loss_func = nn.CrossEntropyLoss()
+elif (args.loss_eq == 'mse'):
+    loss_func = Rescaled_MSE(device=device, num_classes=args.n_classes)
+elif(args.loss_eq == 'sqen_rs'):
+    alpha = args.sqen_alpha
+    loss_func = Squentropy(device=device, num_classes=args.n_classes, rescale_factor=alpha)
+elif(args.loss_eq == 'sqen_neg_rs'):
+    alpha = args.sqen_alpha
+    loss_func = Squentropy(device=device, num_classes=args.n_classes, rescale_factor=alpha, neg_class=True)
+else:
+    raise Exception(f'\nInvalid loss function input: {args.loss_eq} \
+                    \nPlease input \'sqen\', \'cross\', or \'mse\' as inputs to the loss_eq parameter\n')
+
 for epoch in range(start_epoch, args.n_epochs):
     print(f"Epoch: {epoch}/{args.n_epochs}")
     start = time.time()
-    trainloss = train(epoch)
-    val_loss, acc, ece = test(epoch)
+    trainloss = train(epoch, loss_func)
+    val_loss, acc, ece = test(epoch, loss_func)
 
     ece_sum += ece
     ece_avg = ece_sum / (epoch + 1)
