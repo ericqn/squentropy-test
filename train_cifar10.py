@@ -387,7 +387,6 @@ trainloader, testloader = Dataloader.load_train_test_loaders(trainset, testset)
 
 model_name = args.net
 net = Network_Factory.load_model(model_name)
-net.register_parameter("rescale_factor", nn.Parameter(torch.tensor(1.0, device=device)))
 
 # For viewing data (debugging purposes):
 
@@ -556,7 +555,7 @@ global_start_time = time.time()
 list_loss = []
 list_acc = []
 alpha_vals = []
-alpha_vals.append(net.learnable_rescale_factor)
+alpha_vals.append(np.round(net.learnable_rescale_factor.data.item(), decimals=6))
 
 ece_sum = 0
 ece_max = 0
@@ -576,6 +575,8 @@ elif(args.loss_eq == 'sqen_rs'):
 elif(args.loss_eq == 'sqen_neg_rs'):
     alpha = args.sqen_alpha
     loss_func = Squentropy(device=device, num_classes=args.n_classes, rescale_factor=alpha, neg_class=True)
+elif (args.loss_eq == 'cross'):
+    loss_func = Learnable_Squentropy_TEST(device=device, num_classes=args.n_classes)
 else:
     raise Exception(f'\nInvalid loss function input: {args.loss_eq} \
                     \nPlease input \'sqen\', \'cross\', or \'mse\' as inputs to the loss_eq parameter\n')
@@ -602,7 +603,7 @@ for epoch in range(start_epoch, args.n_epochs):
     
     list_loss.append(val_loss)
     list_acc.append(acc)
-    alpha_vals.append(np.round(net.learnable_rescale_factor.data, decimals=6))
+    alpha_vals.append(np.round(net.learnable_rescale_factor.data.item(), decimals=6))
     
     # TODO: Change step into epoch
     # Log training..
@@ -628,7 +629,7 @@ for epoch in range(start_epoch, args.n_epochs):
         writer.writerow(list_loss) 
         writer.writerow(list_acc) 
     print(list_loss)
-    print(f'Alpha Values: {alpha_vals}')
+    print(f'\nAlpha Values: {alpha_vals}\n')
 
 # writeout wandb
 if usewandb:
