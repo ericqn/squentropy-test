@@ -7,11 +7,40 @@ import numpy as np
 
 import ipdb
 
+class Learnable_Squentropy_TEST(nn.Module):
+    # rescale factor of 1 yields standard non-rescaled squentropy
+    # if True, negative classification sets incorrect classes in one-hot-encoding to -1
+    def __init__(self, device, num_classes=10, rescale_factor=1, neg_class=False):
+        super().__init__()
+        self.device = device
+        self.num_classes = num_classes
+        self.rescale_factor = rescale_factor
+        self.negative_classification = neg_class
+    
+    # rescale factor will be retrieved from network
+    def forward(self, outputs, targets, learnable_rescale_factor=None):
+        num_classes = 10
+
+        # one-hot encoding of target
+        target_final = torch.zeros([targets.size()[0], num_classes], device = self.device).scatter_(1, targets.reshape(
+            targets.size()[0], 1), 1)
+        
+        rescale_factor = self.rescale_factor
+        if learnable_rescale_factor is not None:
+            rescale_factor = learnable_rescale_factor
+
+        # ce_func = nn.CrossEntropyLoss().cuda()
+        ce_func = nn.CrossEntropyLoss()
+        loss = rescale_factor * (torch.sum(outputs ** 2) - torch.sum((outputs[target_final == 1]) ** 2)) / (
+                    num_classes - 1) / target_final.size()[0] \
+                + ce_func(outputs, targets)
+        return loss
+
 class Squentropy(nn.Module):
     # rescale factor of 1 yields standard non-rescaled squentropy
     # if True, negative classification sets incorrect classes in one-hot-encoding to -1
     def __init__(self, device, num_classes=10, rescale_factor=1, neg_class=False):
-        super.__init__()
+        super().__init__()
         self.device = device
         self.num_classes = num_classes
         self.rescale_factor = rescale_factor
@@ -22,10 +51,10 @@ class Squentropy(nn.Module):
 
         # create one-hot encoding of target
         if self.negative_classification:
-            target_final = torch.zeros([targets.size()[-1], num_classes]).scatter_(1, targets.reshape(
+            target_final = torch.zeros([targets.size()[-1], num_classes], device=self.device).scatter_(1, targets.reshape(
                 targets.size()[0], 1), 1)
         else: 
-            target_final = torch.zeros([targets.size()[0], num_classes]).scatter_(1, targets.reshape(
+            target_final = torch.zeros([targets.size()[0], num_classes], device=self.device).scatter_(1, targets.reshape(
                 targets.size()[0], 1), 1)
 
         # ce_func = nn.CrossEntropyLoss().cuda()
@@ -37,7 +66,7 @@ class Squentropy(nn.Module):
 
 class Rescaled_MSE(nn.Module):
     def __init__(self, device, num_classes=10, sqLoss_t=1, sqLoss_M=1):
-        super.__init__()
+        super().__init__()
         self.device = device
         self.num_classes = num_classes
         self.sqLoss_t = sqLoss_t

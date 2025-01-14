@@ -33,7 +33,7 @@ from models.convmixer import ConvMixer
 
 from utils import progress_bar
 from randomaug import RandAugment
-from train_functions import _ECELoss, Squentropy, Rescaled_MSE
+from train_functions import _ECELoss, Squentropy, Rescaled_MSE, Learnable_Squentropy_TEST
 
 import ipdb
 
@@ -415,9 +415,9 @@ if args.resume:
     start_epoch = checkpoint['epoch']
 
 if args.opt == "adam":
-    optimizer = optim.Adam(net.parameters() + [net.rescale_factor], lr=args.lr)
+    optimizer = optim.Adam(net.parameters(), lr=args.lr)
 elif args.opt == "sgd":
-    optimizer = optim.SGD(net.parameters() + [net.rescale_factor], lr=args.lr)  
+    optimizer = optim.SGD(net.parameters(), lr=args.lr)  
     
 # use cosine scheduling
 scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, args.n_epochs)
@@ -441,7 +441,7 @@ def train(epoch, loss_func):
         # Train with amp
         with torch.cuda.amp.autocast(enabled=use_amp):
             outputs = net(inputs)
-            loss = loss_func(outputs, targets)
+            loss = loss_func(outputs, targets, net.learnable_rescale_factor)
             # if (args.loss_eq == 'sqen'):
             #     alpha = args.sqen_alpha
             #     loss = loss_func.squentropy(outputs, targets)
@@ -467,6 +467,10 @@ def train(epoch, loss_func):
         scaler.scale(loss).backward()
         scaler.step(optimizer)
         scaler.update()
+
+        with torch.no_grad():
+            net.learnable_rescale_factor.data = torch.clamp(net.learnable_rescale_factor, min=0, max=1)
+
         optimizer.zero_grad()
 
         train_loss += loss.item()
@@ -476,7 +480,9 @@ def train(epoch, loss_func):
 
         progress_bar(batch_idx, len(trainloader), 'Train Loss: %.3f | Train Acc: %.3f%% (%d/%d)'
             % (train_loss/(batch_idx+1), 100.*correct/total, correct, total))
-    return train_loss/(batch_idx+1)
+    
+    alpha_value = net.learnable_rescale_factor.data
+    return train_loss/(batch_idx+1), alpha_value
 
 ##### Validation
 def test(epoch, loss_func):
@@ -549,6 +555,8 @@ global_start_time = time.time()
 # tracking ECE min, max, avg
 list_loss = []
 list_acc = []
+alpha_vals = []
+alpha_vals.append(net.learnable_rescale_factor)
 
 ece_sum = 0
 ece_max = 0
@@ -575,7 +583,7 @@ else:
 for epoch in range(start_epoch, args.n_epochs):
     print(f"Epoch: {epoch}/{args.n_epochs}")
     start = time.time()
-    trainloss = train(epoch, loss_func)
+    trainloss, alpha = train(epoch, loss_func)
     val_loss, acc, ece = test(epoch, loss_func)
 
     ece_sum += ece
@@ -594,6 +602,7 @@ for epoch in range(start_epoch, args.n_epochs):
     
     list_loss.append(val_loss)
     list_acc.append(acc)
+    alpha_vals.append(np.round(net.learnable_rescale_factor.data, decimals=6))
     
     # TODO: Change step into epoch
     # Log training..
@@ -619,6 +628,7 @@ for epoch in range(start_epoch, args.n_epochs):
         writer.writerow(list_loss) 
         writer.writerow(list_acc) 
     print(list_loss)
+    print(f'Alpha Values: {alpha_vals}')
 
 # writeout wandb
 if usewandb:

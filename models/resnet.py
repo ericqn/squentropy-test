@@ -76,6 +76,9 @@ class ResNet(nn.Module):
         self.layer4 = self._make_layer(block, 512, num_blocks[3], stride=2)
         self.linear = nn.Linear(512*block.expansion, num_classes)
 
+        # Learnable parameter from loss function:
+        self.learnable_rescale_factor = nn.Parameter(torch.tensor(1.0), requires_grad=True)
+
     def _make_layer(self, block, planes, num_blocks, stride):
         strides = [stride] + [1]*(num_blocks-1)
         layers = []
