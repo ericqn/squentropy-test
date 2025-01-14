@@ -440,7 +440,9 @@ def train(epoch, loss_func):
         # Train with amp
         with torch.cuda.amp.autocast(enabled=use_amp):
             outputs = net(inputs)
-            loss = loss_func(outputs, targets, net.learnable_rescale_factor)
+            loss = loss_func(outputs, targets)
+            if args.loss_eq == 'sqen_alpha':
+                loss = loss_func(outputs, targets, net.learnable_rescale_factor)
             # if (args.loss_eq == 'sqen'):
             #     alpha = args.sqen_alpha
             #     loss = loss_func.squentropy(outputs, targets)
@@ -508,6 +510,8 @@ def test(epoch, loss_func):
             outputs = net(inputs)
 
             loss = loss_func(outputs, targets)
+            if args.loss_eq == 'sqen_alpha':
+                loss = loss_func(outputs, targets, net.learnable_rescale_factor)
 
             logits_list.append(outputs)
             labels_list.append(targets)
@@ -575,7 +579,7 @@ elif(args.loss_eq == 'sqen_rs'):
 elif(args.loss_eq == 'sqen_neg_rs'):
     alpha = args.sqen_alpha
     loss_func = Squentropy(device=device, num_classes=args.n_classes, rescale_factor=alpha, neg_class=True)
-elif (args.loss_eq == 'cross'):
+elif (args.loss_eq == 'sqen_alpha'):
     loss_func = Learnable_Squentropy_TEST(device=device, num_classes=args.n_classes)
 else:
     raise Exception(f'\nInvalid loss function input: {args.loss_eq} \
@@ -620,8 +624,9 @@ for epoch in range(start_epoch, args.n_epochs):
         wandb.log({"Epoch Runtime (s)": time.time() - start}, step=epoch)
         wandb.log({"Total Runtime (s)": time.time() - global_start_time}, step=epoch)
         wandb.log({'Epoch': epoch})
-
-        # log max, min, avg for ECE and test loss
+        
+        if args.loss_eq is 'sqen_alpha':
+            wandb.log({'Learnable Alpha': net.learnable_rescale_factor.data.item()}, step=epoch)
 
     # Write out csv..
     with open(f'log/log_{args.net}_patch{args.patch}.csv', 'w') as f:
