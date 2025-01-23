@@ -33,7 +33,7 @@ from models.convmixer import ConvMixer
 
 from utils import progress_bar
 from randomaug import RandAugment
-from train_functions import _ECELoss, Squentropy, Rescaled_MSE, Learnable_Squentropy_TEST
+from train_functions import _ECELoss, Squentropy, Rescaled_MSE, Learnable_Squentropy
 
 import ipdb
 
@@ -580,7 +580,7 @@ elif(args.loss_eq == 'sqen_neg_rs'):
     alpha = args.sqen_alpha
     loss_func = Squentropy(device=device, num_classes=args.n_classes, rescale_factor=alpha, neg_class=True)
 elif (args.loss_eq == 'sqen_alpha'):
-    loss_func = Learnable_Squentropy_TEST(device=device, num_classes=args.n_classes)
+    loss_func = Learnable_Squentropy(device=device, num_classes=args.n_classes)
 else:
     raise Exception(f'\nInvalid loss function input: {args.loss_eq} \
                     \nPlease input \'sqen\', \'cross\', or \'mse\' as inputs to the loss_eq parameter\n')
@@ -607,25 +607,27 @@ for epoch in range(start_epoch, args.n_epochs):
     
     list_loss.append(val_loss)
     list_acc.append(acc)
-    alpha_vals.append(np.round(net.learnable_rescale_factor.data.item(), decimals=6))
+    alpha_vals.append(np.round(alpha.item(), decimals=6))
     
     # TODO: Change step into epoch
     # Log training..
     if usewandb:
-        wandb.log({'Best Eval Acc': eval_acc_max}, step=epoch)
-        wandb.log({'Max ECE': ece_max}, step=epoch)
-        wandb.log({'Min ECE': ece_min}, step=epoch)
-        wandb.log({'Avg ECE': ece_avg}, step=epoch)
-        wandb.log({'Train Loss': trainloss}, step=epoch)
-        wandb.log({'Eval Loss': val_loss}, step=epoch)
-        wandb.log({'Eval Acc': acc}, step=epoch)
-        wandb.log({'Learning Rate': optimizer.param_groups[0]["lr"]}, step=epoch)
-        wandb.log({'Testing ECE': ece}, step=epoch)
-        wandb.log({"Epoch Runtime (s)": time.time() - start}, step=epoch)
-        wandb.log({"Total Runtime (s)": time.time() - global_start_time}, step=epoch)
-        wandb.log({'Epoch': epoch})
+        wandb.log({
+            'Best Eval Acc': eval_acc_max,
+            'Max ECE': ece_max,
+            'Min ECE': ece_min,
+            'Avg ECE': ece_avg,
+            'Train Loss': trainloss,
+            'Eval Loss': val_loss,
+            'Eval Acc': acc,
+            'Learning Rate': optimizer.param_groups[0]["lr"],
+            'Testing ECE': ece,
+            "Epoch Runtime (s)": time.time() - start,
+            "Total Runtime (s)": time.time() - global_start_time,
+            'Epoch': epoch
+        }, step=epoch)
         
-        if args.loss_eq is 'sqen_alpha':
+        if args.loss_eq == 'sqen_alpha':
             wandb.log({'Learnable Alpha': net.learnable_rescale_factor.data.item()}, step=epoch)
 
     # Write out csv..

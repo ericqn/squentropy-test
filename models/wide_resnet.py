@@ -78,6 +78,9 @@ class WideResNet(nn.Module):
         self.fc = nn.Linear(nChannels[3], num_classes)
         self.nChannels = nChannels[3]
 
+        # Implementation of learnable parameter
+        self.learnable_rescale_factor = nn.Parameter(torch.tensor(1.0), requires_grad=True)
+
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')

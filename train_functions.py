@@ -7,7 +7,7 @@ import numpy as np
 
 import ipdb
 
-class Learnable_Squentropy_TEST(nn.Module):
+class Learnable_Squentropy(nn.Module):
     # rescale factor of 1 yields standard non-rescaled squentropy
     # if True, negative classification sets incorrect classes in one-hot-encoding to -1
     def __init__(self, device, num_classes=10, rescale_factor=1, neg_class=False):

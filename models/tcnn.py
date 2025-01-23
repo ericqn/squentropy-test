@@ -78,6 +78,9 @@ class TCN(nn.Module):
         super(TCN, self).__init__()
         self.tcn = TemporalConvNet(input_size, num_channels, kernel_size=kernel_size, dropout=dropout)
         self.linear = nn.Linear(num_channels[-1], output_size)
+        
+        # Implementation of learnable parameter
+        self.learnable_rescale_factor = nn.Parameter(torch.tensor(1.0), requires_grad=True)
 
     def forward(self, inputs):
         """Inputs have to have dimension (N, C_in, L_in)"""

@@ -109,6 +109,9 @@ class ViT(nn.Module):
             nn.Linear(dim, num_classes)
         )
 
+        # Implementation of learnable parameter
+        self.learnable_rescale_factor = nn.Parameter(torch.tensor(1.0), requires_grad=True)
+
     def forward(self, img):
         x = self.to_patch_embedding(img)
         b, n, _ = x.shape
