@@ -18,6 +18,7 @@ class VGG(nn.Module):
         super(VGG, self).__init__()
         self.features = self._make_layers(cfg[vgg_name])
         self.classifier = nn.Linear(512, 10)
+        self.learnable_rescale_factor = nn.Parameter(torch.tensor(1.0), requires_grad=True)
 
     def forward(self, x):
         out = self.features(x)

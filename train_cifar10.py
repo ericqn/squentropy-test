@@ -250,8 +250,8 @@ class Network_Factory:
             network_model = ResNet18()
         elif (model_name == 'vgg'):
             # net used in squentropy paper
-            network_model = torchvision.models.vgg11_bn(weights=None, num_classes=n_classes)
-            # net = VGG('VGG19')
+            # network_model = torchvision.models.vgg11_bn(weights=None, num_classes=n_classes)
+            net = VGG('VGG11')
         elif (model_name=='res34'):
             network_model = ResNet34()
         elif (model_name == 'res50'):
