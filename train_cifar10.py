@@ -1,10 +1,7 @@
 # -*- coding: utf-8 -*-
 '''
-
 Train CIFAR10 with PyTorch and Vision Transformers!
 Original codebase written by @kentaroy47, @arutema47
-
-
 '''
 
 from __future__ import print_function
@@ -96,10 +93,7 @@ if args.net=="vit_timm":
 #     sqLoss_M = 10
 
 '''
-Custom torchvision transformer that reshapes data tensors into the given vector input; 
-Given size must make sense-- cannot reshape (100,2,5,5) tensor into (5,5,5) tensor
-
-See https://pytorch.org/docs/stable/generated/torch.Tensor.view.html for more info
+Custom torchvision transformer that reshapes data tensors into the given vector input.
 '''
 class ReshapeTransform:
     def __init__(self, new_shape):
@@ -249,6 +243,7 @@ class Network_Factory:
         if (model_name == 'res18'):
             network_model = ResNet18()
         elif (model_name == 'vgg'):
+            from models.vgg import VGG
             # net used in squentropy paper
             # network_model = torchvision.models.vgg11_bn(weights=None, num_classes=n_classes)
             net = VGG('VGG11')
@@ -443,27 +438,6 @@ def train(epoch, loss_func):
             loss = loss_func(outputs, targets)
             if args.loss_eq == 'sqen_alpha':
                 loss = loss_func(outputs, targets, net.learnable_rescale_factor)
-            # if (args.loss_eq == 'sqen'):
-            #     alpha = args.sqen_alpha
-            #     loss = loss_func.squentropy(outputs, targets)
-            # elif (args.loss_eq == 'cross'):
-            #     loss = loss_func.cross_entropy(outputs, targets)
-            # elif (args.loss_eq == 'mse'):
-            #     loss = loss_func.rescaled_mse(outputs, targets)
-            # elif(args.loss_eq == 'sqen_rs'):
-            #     # alpha = args.sqen_alpha
-            #     alpha = net.rescale_factor.item()
-
-            #     # Debugging:
-            #     print(f'\n TRAINING ALPHA for {epoch} = {alpha} \n')
-
-            #     loss = loss_func.rescaled_squentropy(outputs, targets, alpha)
-            # elif(args.loss_eq == 'sqen_neg_rs'):
-            #     alpha = args.sqen_alpha
-            #     loss = loss_func.rescaled_negative_squentropy(outputs, targets, alpha)
-            # else:
-            #     raise Exception(f'\nInvalid loss function input: {args.loss_eq} \
-            #                     \nPlease input \'sqen\', \'cross\', or \'mse\' as inputs to the loss_eq parameter\n')
             
         scaler.scale(loss).backward()
         scaler.step(optimizer)

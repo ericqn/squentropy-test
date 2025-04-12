@@ -438,7 +438,7 @@ def main():
         wandb.watch(net)
         
     global_start_time = time.time()
-    # uncomment this after gpu access
+    
     # net.cuda()
     for epoch in range(start_epoch, args.n_epochs):
         print(f"Epoch: {epoch}/{args.n_epochs}")

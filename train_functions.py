@@ -19,7 +19,7 @@ class Learnable_Squentropy(nn.Module):
     
     # rescale factor will be retrieved from network
     def forward(self, outputs, targets, learnable_rescale_factor=None):
-        num_classes = 10
+        num_classes = self.num_classes
 
         # one-hot encoding of target
         target_final = torch.zeros([targets.size()[0], num_classes], device = self.device).scatter_(1, targets.reshape(
@@ -83,89 +83,6 @@ class Rescaled_MSE(nn.Module):
         loss = torch.mean((outputs - self.sqLoss_M * target_final.type(torch.float)) ** 2 * mse_weights)
         return loss
 
-# class Loss_Functions:
-#     def __init__(self, device, num_classes, dataset):
-#         self.device = device
-#         self.num_classes = num_classes
-#         # Standard MSE rescale variables
-#         self.sqLoss_M = 1
-#         self.sqLoss_t = 1
-#         # For Rescaled Squentropy variables
-#         self.sqen_alpha = 1
-
-#         if (dataset == 'cifar10') or (dataset == 'cifar100'):
-#             self.sqLoss_M = 10
-
-#     '''
-#     Squentropy function
-#     '''
-#     def squentropy(self, outputs, targets):
-#         num_classes = self.num_classes
-
-#         # one-hot encoding of target
-#         target_final = torch.zeros([targets.size()[0], num_classes], device=self.device).scatter_(1, targets.reshape(
-#             targets.size()[0], 1), 1)
-
-#         # ce_func = nn.CrossEntropyLoss().cuda()
-#         ce_func = nn.CrossEntropyLoss()
-#         loss = (torch.sum(outputs ** 2) - torch.sum((outputs[target_final == 1]) ** 2)) / (
-#                     num_classes - 1) / target_final.size()[0] \
-#                 + ce_func(outputs, targets)
-#         return loss
-    
-#     '''
-#     Rescalable squentropy function
-#     Set rescale factor to 1 for original squentropy function and 0 for cross-entropy function
-#     '''
-#     def rescaled_squentropy(self, outputs, targets, rescale_factor):
-#         num_classes = self.num_classes
-
-#         # one-hot encoding of target
-#         target_final = torch.zeros([targets.size()[0], num_classes], device=self.device).scatter_(1, targets.reshape(
-#             targets.size()[0], 1), 1)
-
-#         # ce_func = nn.CrossEntropyLoss().cuda()
-#         ce_func = nn.CrossEntropyLoss()
-#         loss = rescale_factor * (torch.sum(outputs ** 2) - torch.sum((outputs[target_final == 1]) ** 2)) / (
-#                     num_classes - 1) / target_final.size()[0] \
-#                 + ce_func(outputs, targets)
-#         return loss
-    
-#     '''
-#     Rescaled squentropy function with incorrect classes set to -1 instead of 0 in one hot encoding
-#     '''
-#     def rescaled_negative_squentropy(self, outputs, targets, rescale_factor):
-#         num_classes = self.num_classes
-
-#         # one-hot encoding of target
-#         target_final = torch.full([targets.size()[0], num_classes], -1, device=self.device).scatter_(1, targets.reshape(
-#             targets.size()[0], 1), 1)
-
-#         # ce_func = nn.CrossEntropyLoss().cuda()
-#         ce_func = nn.CrossEntropyLoss()
-#         loss = rescale_factor * (torch.sum(outputs ** 2) - torch.sum((outputs[target_final == 1]) ** 2)) / (
-#                     num_classes - 1) / target_final.size()[0] \
-#                 + ce_func(outputs, targets)
-#         return loss
-
-#     # Rescaled Mean Square Error function
-#     def rescaled_mse(self, outputs, targets):
-#         num_classes = self.num_classes
-
-#         # one-hot encoding of target
-#         target_final = torch.zeros([targets.size()[0], num_classes], device=self.device).scatter_(1, targets.reshape(
-#             targets.size()[0], 1), 1)
-#         mse_weights = target_final * self.sqLoss_t + 1
-        
-#         loss = torch.mean((outputs - self.sqLoss_M * target_final.type(torch.float)) ** 2 * mse_weights)
-#         return loss
-
-#     # Default Cross Entropy given by Pytorch
-#     def cross_entropy(self, outputs, targets):
-#         criterion = nn.CrossEntropyLoss()
-#         loss = criterion(outputs, targets)
-#         return loss
-
 # Calculating ECE
 class _ECELoss(nn.Module):
     def __init__(self, n_bins=10):
@@ -195,8 +112,6 @@ class _ECELoss(nn.Module):
                 ece += torch.abs(avg_confidence_in_bin - accuracy_in_bin) * prop_in_bin
         print('ece = ', ece)
         return ece
-
-
 
 # SCE = Static Calibration Error; should be better model for calibration than ECE for multiclassification
 # SCE model from https://openaccess.thecvf.com/content_CVPRW_2019/papers/Uncertainty%20and%20Robustness%20in%20Deep%20Visual%20Learning/Nixon_Measuring_Calibration_in_Deep_Learning_CVPRW_2019_paper.pdf

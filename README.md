@@ -1,22 +1,54 @@
-# vision-transformers-cifar10
-# From original Github:
-Modified playground for training Vision Transformers (ViT) and its related models on CIFAR-10, a common benchmark dataset in computer vision.
+# Abstract
 
-The whole codebase is implemented in Pytorch, which makes it easier for you to tweak and experiment. Over the months, we've made several notable updates including adding different models like ConvMixer, CaiT, ViT-small, SwinTransformers, and MLP mixer. We've also adapted the default training settings for ViT to fit better with the CIFAR-10 dataset.
+The goal of this repo is to replicate and improve results based on the paper by Like Hui
 
-Using the repository is straightforward - all you need to do is run the `train_cifar10.py` script with different arguments, depending on the model and training parameters you'd like to use.
+Cut your Losses with Squentropy: [arxiv](https://arxiv.org/pdf/2302.03952.)
 
-### Updates
+This repository focuses mainly on logging metrics of certain neural architectures upon computer vision datasets. If desired, you can create a wandb profile and log your own custom metrics and results. Some example metrics can be seen logged below. This project was discontinued due to lack of support and unpromising final results.
+
+# Using the Repository
+
+After installing all the dependencies listed in requirements.txt and gaining access to a GPU (the codebase can alternatively be run via CPU by running the ```train_cifar10_cpu.py``` file but with much less support), you can run the following command via terminal:
+
+* `python train_cifar10.py` 
+
+to run the Visual Transformer (ViT) architecture on the CIFAR-10 image dataset. To run the default of 200 epochs, this action takes roughly 30 minutes with access to a GPU. Alternatively, you can adjust some of the hyperparameters via running commands with added arguments:
+
+* `python train_cifar10.py --net mlpmixer --n_epochs 500 --lr 1e-3`
+* `python train_cifar10.py --net tcnn --dataset mnist --n_epochs 200 --loss_eq sqen_rs --lr 0.0002 --nowandb`
+
+The full list of supported hyperparameters can be viewed by accessing ```train_cifar10.py``` and viewing the ```parser``` variable.
+
+# Updates made for Squentropy Project
 Additions made by @ericqn
-* Cleaned up codebase by separating loss functions + ECE metric into different class file (2024/9)
+* Added learnable squentropy loss function with dynamic learning rate and support into certain architetures. (2024/10)
+
+* Added rescalable squentropy loss function. Cleaned up codebase by separating loss functions + ECE metric into the utility file train_functions.py (2024/9)
 
 * Added Wide Resnet model and CIFAR-100 dataset (2024/8)
 
 * Added Temporal CNN model (2024/8)
 
+* Added model factory and dataset loader classes to ease addition of new model and datasets implementations. (2024/8)
+
 * Added bash script (slurm.sh) to run on remote GPU servers -- Illinois Delta GPU (2024/7)
 
 * Added MNIST, SVHN datasets (2024/6)
+
+# Sample Results
+The following represents some metrics (loss and calibration) imported from WandB after running experiments after implementing the rescalable squentropy loss function into certain neural architectures.
+
+<div style="text-align: center;">
+  <img src="data/images/sqen_rs_data.png" alt="Squentropy Rescaled Data" width="500"/>
+</div>
+
+
+# Original [github](https://github.com/kentaroy47/vision-transformers-cifar10)
+Modified playground for training Vision Transformers (ViT) and its related models on CIFAR-10, a common benchmark dataset in computer vision.
+
+The whole codebase is implemented in Pytorch, which makes it easier for you to tweak and experiment. Over the months, we've made several notable updates including adding different models like ConvMixer, CaiT, ViT-small, SwinTransformers, and MLP mixer. We've also adapted the default training settings for ViT to fit better with the CIFAR-10 dataset.
+
+Using the repository is straightforward - all you need to do is run the `train_cifar10.py` script with different arguments, depending on the model and training parameters you'd like to use.
 ---
 * Added [ConvMixer]((https://openreview.net/forum?id=TVHS5Y4dNvM)) implementation. Really simple! (2021/10)
 
@@ -32,46 +64,7 @@ Additions made by @ericqn
 
 * Fixed some bugs and training settings (2024/2)
 
-# Usage example
-`python train_cifar10.py` # vit-patchsize-4
-
-`python train_cifar10.py  --size 48` # vit-patchsize-4-imsize-48
-
-`python train_cifar10.py --patch 2` # vit-patchsize-2
-
-`python train_cifar10.py --net vit_small --n_epochs 400` # vit-small
-
-`python train_cifar10.py --net vit_timm` # train with pretrained vit
-
-`python train_cifar10.py --net convmixer --n_epochs 400` # train with convmixer
-
-`python train_cifar10.py --net mlpmixer --n_epochs 500 --lr 1e-3`
-
-`python train_cifar10.py --net cait --n_epochs 200` # train with cait
-
-`python train_cifar10.py --net swin --n_epochs 400` # train with SwinTransformers
-
-`python train_cifar10.py --net res18` # resnet18+randaug
-
-# Results..
-
-|             | Accuracy | Train Log |
-|:-----------:|:--------:|:--------:|
-| ViT patch=2 |    80%    | |
-| ViT patch=4 Epoch@200 |    80%   | [Log](https://wandb.ai/arutema47/cifar10-challange/reports/Untitled-Report--VmlldzoxNjU3MTU2?accessToken=3y3ib62e8b9ed2m2zb22dze8955fwuhljl5l4po1d5a3u9b7yzek1tz7a0d4i57r) |
-| ViT patch=4 Epoch@500 |    88%   | [Log](https://wandb.ai/arutema47/cifar10-challange/reports/Untitled-Report--VmlldzoxNjU3MTU2?accessToken=3y3ib62e8b9ed2m2zb22dze8955fwuhljl5l4po1d5a3u9b7yzek1tz7a0d4i57r) |
-| ViT patch=8 |    30%   | |
-| ViT small  | 80% | |
-| MLP mixer |    88%   | |
-| CaiT  | 80% | |
-| Swin-t  | 90% | |
-| ViT small (timm transfer) | 97.5% | |
-| ViT base (timm transfer) | 98.5% | |
-| [ConvMixerTiny(no pretrain)](https://openreview.net/forum?id=TVHS5Y4dNvM) | 96.3% |[Log](https://wandb.ai/arutema47/cifar10-challange/reports/convmixer--VmlldzoyMjEyOTk1?accessToken=2w9nox10so11ixf7t0imdhxq1rf1ftgzyax4r9h896iekm2byfifz3b7hkv3klrt)|
-|   resnet18  |  93%  | |
-|   resnet18+randaug  |  95%  | [Log](https://wandb.ai/arutema47/cifar10-challange/reports/Untitled-Report--VmlldzoxNjU3MTYz?accessToken=968duvoqt6xq7ep75ob0yppkzbxd0q03gxy2apytryv04a84xvj8ysdfvdaakij2) |
-
-# Used in..
+# This Used in...
 * Vision Transformer Pruning [arxiv](https://arxiv.org/abs/2104.08500) [github](https://github.com/Cydia2018/ViT-cifar10-pruning)
 * Understanding why ViT trains badly on small datasets: an intuitive perspective [arxiv](https://arxiv.org/abs/2302.03751)
 * Training deep neural networks with adaptive momentum inspired by the quadratic optimization [arxiv](https://arxiv.org/abs/2110.09057)
