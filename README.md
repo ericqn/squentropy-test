@@ -20,8 +20,8 @@ to run the Visual Transformer (ViT) architecture on the CIFAR-10 image dataset. 
 The full list of supported hyperparameters can be viewed by accessing ```train_cifar10.py``` and viewing the ```parser``` variable.
 
 # Updates made for Squentropy Project
-Additions made by @ericqn
-* Added learnable squentropy loss function with dynamic learning rate and support into certain architetures. (2024/10)
+Notable additions made by @ericqn
+* Added learnable squentropy loss function with dynamic learning rate and support into certain architectures. (2024/10)
 
 * Added rescalable squentropy loss function. Cleaned up codebase by separating loss functions + ECE metric into the utility file train_functions.py (2024/9)
 
@@ -48,7 +48,6 @@ Modified playground for training Vision Transformers (ViT) and its related model
 
 The whole codebase is implemented in Pytorch, which makes it easier for you to tweak and experiment. Over the months, we've made several notable updates including adding different models like ConvMixer, CaiT, ViT-small, SwinTransformers, and MLP mixer. We've also adapted the default training settings for ViT to fit better with the CIFAR-10 dataset.
 
-Using the repository is straightforward - all you need to do is run the `train_cifar10.py` script with different arguments, depending on the model and training parameters you'd like to use.
 ---
 * Added [ConvMixer]((https://openreview.net/forum?id=TVHS5Y4dNvM)) implementation. Really simple! (2021/10)
 
@@ -64,7 +63,7 @@ Using the repository is straightforward - all you need to do is run the `train_c
 
 * Fixed some bugs and training settings (2024/2)
 
-# This Used in...
+# Additionally Used in...
 * Vision Transformer Pruning [arxiv](https://arxiv.org/abs/2104.08500) [github](https://github.com/Cydia2018/ViT-cifar10-pruning)
 * Understanding why ViT trains badly on small datasets: an intuitive perspective [arxiv](https://arxiv.org/abs/2302.03751)
 * Training deep neural networks with adaptive momentum inspired by the quadratic optimization [arxiv](https://arxiv.org/abs/2110.09057)
